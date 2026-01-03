@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 
-const Card = ({ card, isFlipped, onClick, style, language = 'en' }) => {
+const Card = ({ card, isFlipped, onClick, style, language = 'en', className }) => {
   const cardRef = useRef(null);
 
   // Helper to safely get localized string or fallback
@@ -169,7 +169,7 @@ const Card = ({ card, isFlipped, onClick, style, language = 'en' }) => {
   return (
     <div
       ref={cardRef}
-      className={`relative w-[200px] h-[340px] perspective-1000 cursor-pointer m-[10px] group ${isFlipped ? 'flipped' : ''} animate-float`}
+      className={`relative perspective-1000 cursor-pointer group ${isFlipped ? 'flipped' : ''} animate-float ${className || 'w-[200px] h-[340px] m-[10px]'}`}
       onClick={onClick}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}

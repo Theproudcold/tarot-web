@@ -91,31 +91,31 @@ function App() {
         </button>
       </div>
 
-      <header className="p-8 bg-black/20 border-b border-tarot-gold/20 backdrop-blur-sm">
-        <h1 className="font-serif text-5xl m-0 text-tarot-gold drop-shadow-[0_0_10px_rgba(212,175,55,0.5)]">
+      <header className="p-4 md:p-8 bg-black/20 border-b border-tarot-gold/20 backdrop-blur-sm">
+        <h1 className="font-serif text-3xl md:text-5xl m-0 text-tarot-gold drop-shadow-[0_0_10px_rgba(212,175,55,0.5)]">
           {t('title')}
         </h1>
-        <p className="italic opacity-80 mt-2 text-gray-300">
+        <p className="italic opacity-80 mt-2 text-gray-300 text-sm md:text-base">
           {t('subtitle')}
         </p>
 
         {/* Navigation */}
-        <div className="flex justify-center gap-6 mt-6">
+        <div className="flex justify-center gap-3 md:gap-6 mt-4 md:mt-6 flex-wrap">
           <button
             onClick={() => setViewMode('reading')}
-            className={`text-lg font-serif transition-colors border-b-2 ${viewMode === 'reading' ? 'text-tarot-gold border-tarot-gold' : 'text-gray-500 border-transparent hover:text-gray-300'}`}
+            className={`text-sm md:text-lg font-serif transition-colors border-b-2 ${viewMode === 'reading' ? 'text-tarot-gold border-tarot-gold' : 'text-gray-500 border-transparent hover:text-gray-300'}`}
           >
             {t('navReading')}
           </button>
           <button
             onClick={() => setViewMode('gallery')}
-            className={`text-lg font-serif transition-colors border-b-2 ${viewMode === 'gallery' ? 'text-tarot-gold border-tarot-gold' : 'text-gray-500 border-transparent hover:text-gray-300'}`}
+            className={`text-sm md:text-lg font-serif transition-colors border-b-2 ${viewMode === 'gallery' ? 'text-tarot-gold border-tarot-gold' : 'text-gray-500 border-transparent hover:text-gray-300'}`}
           >
             {t('navGallery')}
           </button>
           <button
             onClick={() => setViewMode('history')}
-            className={`text-lg font-serif transition-colors border-b-2 ${viewMode === 'history' ? 'text-tarot-gold border-tarot-gold' : 'text-gray-500 border-transparent hover:text-gray-300'}`}
+            className={`text-sm md:text-lg font-serif transition-colors border-b-2 ${viewMode === 'history' ? 'text-tarot-gold border-tarot-gold' : 'text-gray-500 border-transparent hover:text-gray-300'}`}
           >
             {t('navHistory')}
           </button>

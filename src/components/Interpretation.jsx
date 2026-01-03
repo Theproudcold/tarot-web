@@ -97,7 +97,7 @@ const Interpretation = ({ cards, language = 'en' }) => {
     <div className="w-full max-w-4xl mx-auto mt-8 text-left animate-fadeIn font-serif text-gray-200">
 
       {/* 1. Elemental & Dominant */}
-      <div className="bg-black/40 backdrop-blur-md rounded-xl border border-tarot-gold/30 p-8 mb-8">
+      <div className="bg-black/40 backdrop-blur-md rounded-xl border border-tarot-gold/30 p-4 md:p-8 mb-4 md:mb-8">
         <h2 className="text-xl text-tarot-gold mb-6 border-b border-tarot-gold/20 pb-2">{t.elementalTitle}</h2>
         <div className="flex flex-col md:flex-row gap-8 items-center">
           {/* Chart */}
@@ -184,7 +184,7 @@ const Interpretation = ({ cards, language = 'en' }) => {
       </div>
 
       {/* 4. Advice & Mantra */}
-      <div className="grid md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
         <div className="bg-white/5 p-6 rounded-lg">
           <h3 className="text-tarot-gold font-bold mb-3 border-b border-white/10 pb-2">{t.adviceTitle}</h3>
           <p className="text-gray-300 leading-relaxed">

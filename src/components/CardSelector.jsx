@@ -14,22 +14,29 @@ const CardSelector = ({ onSelect, cardsRemaining, language, t }) => {
   };
 
   const [hoverIndex, setHoverIndex] = useState(null);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
 
-  // Generate a mock array of available cards visually (just indices)
-  // Let's show ~22 cards (Major Arcana count) for the visual effect
-  const cardCount = Math.min(cardsRemaining, 22);
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
-  // Optimize: Limit the number of visual cards rendered to avoid lag
-  // Even if 78 cards remain, we only show ~40 for the visual fan effect
+  // Generate a mock array of available cards visually
+  // Adaptive count for mobile
+  const maxCards = isMobile ? 12 : 22;
+  const cardCount = Math.min(cardsRemaining, maxCards);
+
+  // Optimize: Limit visual cards
   const VISUAL_MAX = 40;
   const visualCount = Math.min(cardCount, VISUAL_MAX);
   const cards = Array.from({ length: visualCount }, (_, i) => i);
 
   // Fan calculations
-  const totalAngle = 100; // Wider spread
+  const totalAngle = isMobile ? 80 : 100;
   const angleStep = totalAngle / (visualCount - 1 || 1);
   const startAngle = -totalAngle / 2;
-  const radius = 600; // Radius of the virtual circle for the arc
+  const radius = isMobile ? 320 : 600; // Tighter radius on mobile
 
   return (
     <div className="relative w-full h-[350px] flex justify-center items-end pb-4 overflow-visible">

@@ -123,7 +123,7 @@ const History = ({ language, t }) => {
                       card={card}
                       isFlipped={true}
                       language={language}
-                      style={{ width: '100px', height: '170px' }} // Small scale
+                      className="w-[80px] h-[136px] md:w-[100px] md:h-[170px] m-[5px]"
                     />
                   ))}
                 </div>

@@ -22,7 +22,7 @@ const Gallery = ({ cards, language = 'en' }) => {
                 console.log('Card clicked:', card.name);
                 setSelectedCard(card);
               }}
-              style={{ width: '160px', height: '272px', margin: 0 }} // Slightly smaller for gallery
+              className="w-[140px] h-[238px] md:w-[160px] md:h-[272px] m-0"
             />
             <div className="mt-2 text-sm text-gray-400 font-serif opacity-70">
               {/* Optional label below card if needed, but Card face has name already */}
