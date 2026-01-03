@@ -70,7 +70,7 @@ const CardSelector = ({ onSelect, cardsRemaining, language, t }) => {
             >
               {/* Card Back Visual */}
               <div className="w-full h-full rounded-xl border-2 border-tarot-gold/50 bg-tarot-dark shadow-xl overflow-hidden brightness-90 hover:brightness-110 transition-all duration-200">
-                <img src="/src/assets/card-back.png" alt="Card Back" className="w-full h-full object-cover" />
+                <img src="/card-back.png" alt="Card Back" className="w-full h-full object-cover" />
               </div>
             </motion.div>
           );

@@ -7,6 +7,12 @@ const History = ({ language, t }) => {
   const [history, setHistory] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
 
+  // Helper
+  const getLocalized = (obj) => {
+    if (typeof obj === 'string') return obj;
+    return obj[language] || obj['en'] || '';
+  };
+
   useEffect(() => {
     const saved = localStorage.getItem('tarot_history');
     if (saved) {
@@ -80,16 +86,14 @@ const History = ({ language, t }) => {
                 </span>
                 <div className="flex gap-2 mt-2">
                   {/* Mini card previews */}
+                  {/* Mini card previews - using direct img for stability */}
                   {record.cards.map(c => (
                     <div key={c.id} className="w-10 h-16 rounded border border-gray-600 flex items-center justify-center overflow-hidden relative bg-black">
-                      <div className="transform scale-[0.2] origin-top-left w-[200px] h-[340px] pointer-events-none">
-                        <Card
-                          card={c}
-                          isFlipped={true}
-                          language={language}
-                          style={{ width: '100%', height: '100%', margin: 0 }}
-                        />
-                      </div>
+                      <img
+                        src={c.image || '/card-back.png'}
+                        alt={t ? getLocalized(c.name) : c.id}
+                        className="w-full h-full object-cover opacity-90"
+                      />
                     </div>
                   ))}
                 </div>

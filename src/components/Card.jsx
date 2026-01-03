@@ -23,25 +23,25 @@ const Card = ({ card, isFlipped, onClick, style, language = 'en' }) => {
     // We keep colors for Court borders or text accents, but use images for symbols
     const themes = {
       wands: {
-        asset: '/src/assets/suits/wand.png',
+        asset: '/suits/wand.png',
         color: 'text-red-900',
         border: 'border-red-900/50',
         symbol: '🔥' // Fallback
       },
       cups: {
-        asset: '/src/assets/suits/cup.png',
+        asset: '/suits/cup.png',
         color: 'text-blue-900',
         border: 'border-blue-900/50',
         symbol: '🏆'
       },
       swords: {
-        asset: '/src/assets/suits/sword.png',
+        asset: '/suits/sword.png',
         color: 'text-slate-800',
         border: 'border-slate-800/50',
         symbol: '⚔️'
       },
       pentacles: {
-        asset: '/src/assets/suits/pentacle.png',
+        asset: '/suits/pentacle.png',
         color: 'text-emerald-900',
         border: 'border-emerald-900/50',
         symbol: '🪙'
@@ -136,7 +136,7 @@ const Card = ({ card, isFlipped, onClick, style, language = 'en' }) => {
 
         {/* Front (Back of Deck Style) */}
         <div className="absolute w-full h-full backface-hidden rounded-2xl flex flex-col justify-center items-center border-[6px] border-[#2c2c2c] bg-tarot-dark card-pattern overflow-hidden">
-          <img src="/src/assets/card-back.png" alt="Card Back" className="w-full h-full object-cover opacity-90" />
+          <img src="/card-back.png" alt="Card Back" className="w-full h-full object-cover opacity-90" />
         </div>
 
         {/* Back (Face of Card) */}
@@ -148,7 +148,7 @@ const Card = ({ card, isFlipped, onClick, style, language = 'en' }) => {
               {/* Card Main Area */}
               <div className="h-[78%] w-full overflow-hidden relative">
                 {/* 1. Base Paper Texture (Unified for ALL cards) */}
-                <div className="absolute inset-0 bg-[url('/src/assets/textures/parchment.png')] bg-cover opacity-100 brightness-95 contrast-110 sepia-[.2] z-0"></div>
+                <div className="absolute inset-0 bg-[url('/textures/parchment.png')] bg-cover opacity-100 brightness-95 contrast-110 sepia-[.2] z-0"></div>
 
                 {/* 2. Unified Gold Frame Border (Procedural) */}
                 <div className="absolute inset-1.5 border-[3px] border-double border-tarot-gold/60 rounded-sm z-20 pointer-events-none"></div>
@@ -158,7 +158,7 @@ const Card = ({ card, isFlipped, onClick, style, language = 'en' }) => {
                 <div className="relative w-full h-full z-10 flex items-center justify-center">
                   {/* Render RWS Image for ALL cards */}
                   <img
-                    src={card?.image || '/src/assets/card-back.png'}
+                    src={card?.image || '/card-back.png'}
                     alt={getLocalized(card?.name, language)}
                     className="w-[94%] h-[94%] object-cover mix-blend-multiply opacity-95 shadow-inner rounded-sm filter contrast-110 sepia-[.1]"
                   />
