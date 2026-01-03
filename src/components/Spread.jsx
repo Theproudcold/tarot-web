@@ -8,7 +8,7 @@ const Spread = ({ cards, language = 'en' }) => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row justify-center gap-4 md:gap-8 min-h-[400px] w-full items-center">
+    <div className="flex flex-col md:flex-row justify-center gap-4 md:gap-8 min-h-[200px] md:min-h-[400px] w-full items-center transition-all duration-300">
       {cards.map((card, index) => (
         <div key={card.id || index} className="flex flex-col items-center animate-fadeIn" style={{ animationDelay: `${index * 0.2}s` }}>
           <h4 className="text-tarot-gold mb-2 font-serif text-xl tracking-wide">{headings[language][index]}</h4>

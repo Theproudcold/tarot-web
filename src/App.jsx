@@ -122,13 +122,13 @@ function App() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center p-4 gap-4 w-full max-w-6xl mx-auto">
+      <main className="flex-1 flex flex-col items-center p-2 md:p-4 gap-1 md:gap-4 w-full max-w-6xl mx-auto">
 
         {viewMode === 'reading' && (
           <>
             {/* Spread Area */}
-            <div className="w-full flex flex-col items-center">
-              <div className="w-full min-h-[400px] flex items-center justify-center">
+            <div className="w-full flex flex-col items-center justify-center flex-1">
+              <div className="w-full min-h-[200px] md:min-h-[400px] flex items-center justify-center">
                 <Spread cards={drawnCards} language={language} />
               </div>
 
@@ -139,7 +139,7 @@ function App() {
             </div>
 
             {/* Interaction Area */}
-            <div className="w-full flex justify-center items-end min-h-[300px]">
+            <div className="w-full flex justify-center items-end min-h-[220px] md:min-h-[300px]">
               {gameState !== 'complete' ? (
                 <CardSelector
                   onSelect={handleSelectCard}
