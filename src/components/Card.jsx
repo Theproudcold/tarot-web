@@ -1,10 +1,43 @@
-import React from 'react';
+import React, { useRef } from 'react';
 
 const Card = ({ card, isFlipped, onClick, style, language = 'en' }) => {
+  const cardRef = useRef(null);
+
   // Helper to safely get localized string or fallback
   const getLocalized = (obj, lang) => {
     if (typeof obj === 'string') return obj; // Handle legacy string data
     return obj[lang] || obj['en'] || '';
+  };
+
+  // Interactive 3D Tilt Logic
+  const handleMouseMove = (e) => {
+    if (!cardRef.current) return;
+
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    // Max tilt 15 degrees
+    const rotateX = ((y - centerY) / centerY) * -15;
+    const rotateY = ((x - centerX) / centerX) * 15;
+
+    // Apply transform (overrides CSS float animation)
+    cardRef.current.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
+
+    // Update glare position variables
+    cardRef.current.style.setProperty('--glare-x', `${(x / rect.width) * 100}%`);
+    cardRef.current.style.setProperty('--glare-y', `${(y / rect.height) * 100}%`);
+  };
+
+  const handleMouseLeave = () => {
+    if (!cardRef.current) return;
+    // Clear inline transform to let CSS animation take over
+    cardRef.current.style.transform = '';
+    cardRef.current.style.setProperty('--glare-x', '50%');
+    cardRef.current.style.setProperty('--glare-y', '50%');
   };
 
   // Determine suit symbol/color if no image
@@ -128,9 +161,12 @@ const Card = ({ card, isFlipped, onClick, style, language = 'en' }) => {
 
   return (
     <div
-      className={`relative w-[200px] h-[340px] perspective-1000 cursor-pointer m-[10px] group ${isFlipped ? 'flipped' : ''}`}
+      ref={cardRef}
+      className={`relative w-[200px] h-[340px] perspective-1000 cursor-pointer m-[10px] group ${isFlipped ? 'flipped' : ''} animate-float`}
       onClick={onClick}
-      style={style}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{ ...style, animationDelay: `${Math.random() * -5}s` }}
     >
       <div className={`relative w-full h-full text-center transition-transform duration-700 transform-style-3d shadow-xl rounded-2xl ${isFlipped ? 'rotate-y-180' : ''}`}>
 
@@ -148,7 +184,7 @@ const Card = ({ card, isFlipped, onClick, style, language = 'en' }) => {
               {/* Card Main Area */}
               <div className="h-[78%] w-full overflow-hidden relative">
                 {/* 1. Base Paper Texture (Unified for ALL cards) */}
-                <div className="absolute inset-0 bg-[url('/src/assets/textures/parchment.png')] bg-cover opacity-100 brightness-95 contrast-110 sepia-[.2] z-0"></div>
+                <div className="absolute inset-0 bg-[url('/textures/parchment.png')] bg-cover opacity-100 brightness-95 contrast-110 sepia-[.2] z-0"></div>
 
                 {/* 2. Unified Gold Frame Border (Procedural) */}
                 <div className="absolute inset-1.5 border-[3px] border-double border-tarot-gold/60 rounded-sm z-20 pointer-events-none"></div>
@@ -169,6 +205,11 @@ const Card = ({ card, isFlipped, onClick, style, language = 'en' }) => {
 
                 {/* 4. Vignette Overlay (Top) */}
                 <div className="absolute inset-0 bg-radial-[at_50%_50%] from-transparent via-transparent to-black/40 z-30 pointer-events-none"></div>
+
+                {/* 5. Holographic Sheen Overlay (Passive -> Active on Hover) */}
+                <div className="absolute inset-0 holo-sheen z-40 opacity-0 group-hover:opacity-60 mix-blend-overlay pointer-events-none transition-opacity duration-500"></div>
+
+
               </div>
 
               {/* Footer Text Area */}

@@ -54,3 +54,50 @@
 .animate-fadeIn {
     animation: fadeIn 0.5s ease-out forwards;
 }
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px) rotateX(0deg); }
+    50% { transform: translateY(-10px) rotateX(2deg); }
+}
+.animate-float {
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes sheen {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+.holo-sheen {
+    background: linear-gradient(
+        105deg, 
+        transparent 20%, 
+        rgba(212, 175, 55, 0.1) 40%, 
+        rgba(255, 255, 255, 0.4) 45%, 
+        rgba(212, 175, 55, 0.1) 50%, 
+        transparent 70%
+    );
+    background-size: 200% 100%;
+    animation: sheen 3s infinite linear;
+    pointer-events: none;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3); 
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(212, 175, 55, 0.5); /* Tarot Gold with opacity */
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(212, 175, 55, 0.8);
+}
