@@ -6,7 +6,7 @@ const Gallery = ({ cards, language = 'en' }) => {
   const [selectedCard, setSelectedCard] = useState(null);
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-4 animate-fadeIn">
+    <div className="w-full max-w-7xl mx-auto p-4">
       <h2 className="text-3xl text-tarot-gold font-serif mb-8 drop-shadow-md">
         {language === 'zh' ? '全牌预览' : 'Card Gallery'}
       </h2>
@@ -18,7 +18,10 @@ const Gallery = ({ cards, language = 'en' }) => {
               card={card}
               isFlipped={true}
               language={language}
-              onClick={() => setSelectedCard(card)}
+              onClick={() => {
+                console.log('Card clicked:', card.name);
+                setSelectedCard(card);
+              }}
               style={{ width: '160px', height: '272px', margin: 0 }} // Slightly smaller for gallery
             />
             <div className="mt-2 text-sm text-gray-400 font-serif opacity-70">

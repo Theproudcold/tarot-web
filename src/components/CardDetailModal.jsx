@@ -24,7 +24,7 @@ const CardDetailModal = ({ card, onClose, language = 'en' }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn" onClick={onClose}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md" onClick={onClose}>
       <div
         className="relative w-full max-w-4xl bg-tarot-dark border-2 border-tarot-gold rounded-2xl overflow-hidden flex flex-col md:flex-row shadow-2xl shadow-tarot-gold/20 max-h-[90vh]"
         onClick={e => e.stopPropagation()}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { tarotCards } from '../data/tarotCards';
 import Interpretation from './Interpretation';
 import Card from './Card';
 
@@ -10,7 +11,17 @@ const History = ({ language, t }) => {
     const saved = localStorage.getItem('tarot_history');
     if (saved) {
       try {
-        setHistory(JSON.parse(saved).reverse()); // Show newest first
+        const parsed = JSON.parse(saved);
+        // Re-hydrate cards from current tarotCards data to ensure new image paths are used
+        // This fixes the issue where old history has stale 'image: null' or old paths
+        const hydrated = parsed.map(record => ({
+          ...record,
+          cards: record.cards.map(c => {
+            const freshCard = tarotCards.find(tc => tc.id === c.id);
+            return freshCard ? freshCard : c;
+          })
+        }));
+        setHistory(hydrated.reverse());
       } catch (e) {
         console.error("Failed to parse history", e);
       }
@@ -33,8 +44,13 @@ const History = ({ language, t }) => {
   if (history.length === 0) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center p-10 min-h-[400px]">
-        <div className="text-4xl mb-4 text-tarot-gold opacity-50">📜</div>
-        <p className="text-gray-400 font-serif">{t('noHistory')}</p>
+        <div className="text-6xl mb-6 text-tarot-gold opacity-60 drop-shadow-[0_0_15px_rgba(212,175,55,0.4)]">
+          {/* Crystal Ball Icon */}
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <p className="text-tarot-gold/60 font-serif text-xl tracking-wider">{t('noHistory')}</p>
       </div>
     );
   }
@@ -65,9 +81,15 @@ const History = ({ language, t }) => {
                 <div className="flex gap-2 mt-2">
                   {/* Mini card previews */}
                   {record.cards.map(c => (
-                    <div key={c.id} className="w-8 h-12 bg-gray-700 rounded border border-gray-600 flex items-center justify-center overflow-hidden">
-                      {/* Just a color block or tiny text */}
-                      <div className="w-full h-full" style={{ backgroundColor: c.image_placeholder_color || '#333' }}></div>
+                    <div key={c.id} className="w-10 h-16 rounded border border-gray-600 flex items-center justify-center overflow-hidden relative bg-black">
+                      <div className="transform scale-[0.2] origin-top-left w-[200px] h-[340px] pointer-events-none">
+                        <Card
+                          card={c}
+                          isFlipped={true}
+                          language={language}
+                          style={{ width: '100%', height: '100%', margin: 0 }}
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>

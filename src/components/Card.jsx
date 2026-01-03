@@ -12,11 +12,12 @@ const Card = ({ card, isFlipped, onClick, style, language = 'en' }) => {
     const name = getLocalized(card.name, 'en').toLowerCase();
 
     // Determine Suit
+    // Determine Suit
     let suit = 'major';
-    if (name.includes('wands') || name.includes('权杖')) suit = 'wands';
-    else if (name.includes('cups') || name.includes('圣杯')) suit = 'cups';
-    else if (name.includes('swords') || name.includes('宝剑')) suit = 'swords';
-    else if (name.includes('pentacles') || name.includes('星币')) suit = 'pentacles';
+    if (name.includes('wands') || name.includes('wand') || name.includes('权杖')) suit = 'wands';
+    else if (name.includes('cups') || name.includes('cup') || name.includes('圣杯')) suit = 'cups';
+    else if (name.includes('swords') || name.includes('sword') || name.includes('宝剑')) suit = 'swords';
+    else if (name.includes('pentacles') || name.includes('pentacle') || name.includes('coins') || name.includes('星币')) suit = 'pentacles';
 
     // Theme Colors & Assets
     // We keep colors for Court borders or text accents, but use images for symbols
@@ -146,27 +147,25 @@ const Card = ({ card, isFlipped, onClick, style, language = 'en' }) => {
             <div className="relative w-full h-full flex flex-col">
               {/* Card Main Area */}
               <div className="h-[78%] w-full overflow-hidden relative">
-                {/* Parchment Texture Background for ALL cards (underlay) */}
-                <div className="absolute inset-0 bg-[url('/src/assets/textures/parchment.png')] bg-cover opacity-100 brightness-95 contrast-125 sepia-[.3]"></div>
+                {/* 1. Base Paper Texture (Unified for ALL cards) */}
+                <div className="absolute inset-0 bg-[url('/src/assets/textures/parchment.png')] bg-cover opacity-100 brightness-95 contrast-110 sepia-[.2] z-0"></div>
 
-                {card.image ? (
-                  /* Major Arcana Image */
-                  <img src={card.image} alt={getLocalized(card.name, language)} className="w-full h-full object-cover relative z-10 mix-blend-multiply opacity-90" />
-                ) : (
-                  /* Minor Arcana / Procedural */
-                  <div className={`w-full h-full flex flex-col items-center justify-center relative z-10`}>
-                    {/* Inner Border */}
-                    <div className={`absolute inset-3 border-2 ${theme.border} opacity-40 rounded pointer-events-none`}></div>
+                {/* 2. Unified Gold Frame Border (Procedural) */}
+                <div className="absolute inset-1.5 border-[3px] border-double border-tarot-gold/60 rounded-sm z-20 pointer-events-none"></div>
+                <div className="absolute inset-1 border border-tarot-gold/30 rounded z-20 pointer-events-none"></div>
 
-                    {theme.rank >= 1 && theme.rank <= 10 ? renderPips(theme.rank, theme.asset, theme.symbol) : null}
-                    {theme.rank >= 11 ? renderCourt(theme.rank, theme.asset) : null}
+                {/* 3. Content Layer */}
+                <div className="relative w-full h-full z-10 flex items-center justify-center">
+                  {/* Render RWS Image for ALL cards */}
+                  <img
+                    src={card?.image || '/src/assets/card-back.png'}
+                    alt={getLocalized(card?.name, language)}
+                    className="w-[94%] h-[94%] object-cover mix-blend-multiply opacity-95 shadow-inner rounded-sm filter contrast-110 sepia-[.1]"
+                  />
+                </div>
 
-                    {/* Fallback */}
-                    {theme.rank === 0 && (
-                      <div className="text-6xl animate-pulse-slow">{theme.symbol}</div>
-                    )}
-                  </div>
-                )}
+                {/* 4. Vignette Overlay (Top) */}
+                <div className="absolute inset-0 bg-radial-[at_50%_50%] from-transparent via-transparent to-black/40 z-30 pointer-events-none"></div>
               </div>
 
               {/* Footer Text Area */}
