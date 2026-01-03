@@ -40,11 +40,19 @@ const Card = ({ card, isFlipped, onClick, style, language = 'en' }) => {
     cardRef.current.style.setProperty('--glare-y', '50%');
   };
 
+  // Helper to resolve paths with base URL for GitHub Pages
+  const resolvePath = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http') || path.startsWith('data:')) return path;
+    const base = import.meta.env.BASE_URL;
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+    return `${base}${cleanPath}`;
+  };
+
   // Determine suit symbol/color if no image
   const getSuitTheme = (card) => {
     const name = getLocalized(card.name, 'en').toLowerCase();
 
-    // Determine Suit
     // Determine Suit
     let suit = 'major';
     if (name.includes('wands') || name.includes('wand') || name.includes('权杖')) suit = 'wands';
@@ -53,28 +61,27 @@ const Card = ({ card, isFlipped, onClick, style, language = 'en' }) => {
     else if (name.includes('pentacles') || name.includes('pentacle') || name.includes('coins') || name.includes('星币')) suit = 'pentacles';
 
     // Theme Colors & Assets
-    // We keep colors for Court borders or text accents, but use images for symbols
     const themes = {
       wands: {
-        asset: '/suits/wand.png',
+        asset: resolvePath('/suits/wand.png'),
         color: 'text-red-900',
         border: 'border-red-900/50',
-        symbol: '🔥' // Fallback
+        symbol: '🔥'
       },
       cups: {
-        asset: '/suits/cup.png',
+        asset: resolvePath('/suits/cup.png'),
         color: 'text-blue-900',
         border: 'border-blue-900/50',
         symbol: '🏆'
       },
       swords: {
-        asset: '/suits/sword.png',
+        asset: resolvePath('/suits/sword.png'),
         color: 'text-slate-800',
         border: 'border-slate-800/50',
         symbol: '⚔️'
       },
       pentacles: {
-        asset: '/suits/pentacle.png',
+        asset: resolvePath('/suits/pentacle.png'),
         color: 'text-emerald-900',
         border: 'border-emerald-900/50',
         symbol: '🪙'
@@ -172,7 +179,7 @@ const Card = ({ card, isFlipped, onClick, style, language = 'en' }) => {
 
         {/* Front (Back of Deck Style) */}
         <div className="absolute w-full h-full backface-hidden rounded-2xl flex flex-col justify-center items-center border-[6px] border-[#2c2c2c] bg-tarot-dark card-pattern overflow-hidden">
-          <img src="/card-back.png" alt="Card Back" className="w-full h-full object-cover opacity-90" />
+          <img src={resolvePath('/card-back.png')} alt="Card Back" className="w-full h-full object-cover opacity-90" />
         </div>
 
         {/* Back (Face of Card) */}
@@ -184,7 +191,10 @@ const Card = ({ card, isFlipped, onClick, style, language = 'en' }) => {
               {/* Card Main Area */}
               <div className="h-[78%] w-full overflow-hidden relative">
                 {/* 1. Base Paper Texture (Unified for ALL cards) */}
-                <div className="absolute inset-0 bg-[url('/textures/parchment.png')] bg-cover opacity-100 brightness-95 contrast-110 sepia-[.2] z-0"></div>
+                <div
+                  className="absolute inset-0 bg-cover opacity-100 brightness-95 contrast-110 sepia-[.2] z-0"
+                  style={{ backgroundImage: `url(${resolvePath('/textures/parchment.png')})` }}
+                ></div>
 
                 {/* 2. Unified Gold Frame Border (Procedural) */}
                 <div className="absolute inset-1.5 border-[3px] border-double border-tarot-gold/60 rounded-sm z-20 pointer-events-none"></div>
@@ -197,7 +207,7 @@ const Card = ({ card, isFlipped, onClick, style, language = 'en' }) => {
                 >
                   {/* Render RWS Image for ALL cards */}
                   <img
-                    src={card?.image || '/card-back.png'}
+                    src={resolvePath(card?.image) || resolvePath('/card-back.png')}
                     alt={getLocalized(card?.name, language)}
                     className="w-[94%] h-[94%] object-cover mix-blend-multiply opacity-95 shadow-inner rounded-sm filter contrast-110 sepia-[.1]"
                   />

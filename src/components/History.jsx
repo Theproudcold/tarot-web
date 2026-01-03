@@ -13,6 +13,14 @@ const History = ({ language, t }) => {
     return obj[language] || obj['en'] || '';
   };
 
+  const resolvePath = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http')) return path;
+    const base = import.meta.env.BASE_URL;
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+    return `${base}${cleanPath}`;
+  };
+
   useEffect(() => {
     const saved = localStorage.getItem('tarot_history');
     if (saved) {
@@ -91,7 +99,7 @@ const History = ({ language, t }) => {
                   {record.cards.map(c => (
                     <div key={c.id} className="w-10 h-16 rounded border border-gray-600 flex items-center justify-center overflow-hidden relative bg-black">
                       <img
-                        src={c.image || '/card-back.png'}
+                        src={resolvePath(c.image) || resolvePath('/card-back.png')}
                         alt={t ? getLocalized(c.name) : c.id}
                         className="w-full h-full object-cover opacity-90"
                         style={{ transform: c.isReversed ? 'rotate(180deg)' : 'none' }}

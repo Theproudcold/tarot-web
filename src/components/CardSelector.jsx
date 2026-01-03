@@ -5,6 +5,14 @@ const CardSelector = ({ onSelect, cardsRemaining, language, t }) => {
   // We don't want to show ALL 78 cards potentially, maybe just a representation or a subset of "available" cards to pick from.
   // Visual effect: A fan of cards.
 
+  const resolvePath = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http')) return path;
+    const base = import.meta.env.BASE_URL;
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+    return `${base}${cleanPath}`;
+  };
+
   const [hoverIndex, setHoverIndex] = useState(null);
 
   // Generate a mock array of available cards visually (just indices)
@@ -70,7 +78,7 @@ const CardSelector = ({ onSelect, cardsRemaining, language, t }) => {
             >
               {/* Card Back Visual */}
               <div className="w-full h-full rounded-xl border-2 border-tarot-gold/50 bg-tarot-dark shadow-xl overflow-hidden brightness-90 hover:brightness-110 transition-all duration-200">
-                <img src="/card-back.png" alt="Card Back" className="w-full h-full object-cover" />
+                <img src={resolvePath('/card-back.png')} alt="Card Back" className="w-full h-full object-cover" />
               </div>
             </motion.div>
           );
