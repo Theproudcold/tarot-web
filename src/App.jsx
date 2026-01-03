@@ -59,7 +59,9 @@ function App() {
 
     if (card) {
       setDeck(newDeck);
-      const newDrawn = [...drawnCards, card];
+      const isReversed = Math.random() < 0.5;
+      const drawnCard = { ...card, isReversed };
+      const newDrawn = [...drawnCards, drawnCard];
       setDrawnCards(newDrawn);
 
       if (newDrawn.length === 3) {

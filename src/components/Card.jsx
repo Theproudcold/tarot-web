@@ -148,14 +148,17 @@ const Card = ({ card, isFlipped, onClick, style, language = 'en' }) => {
               {/* Card Main Area */}
               <div className="h-[78%] w-full overflow-hidden relative">
                 {/* 1. Base Paper Texture (Unified for ALL cards) */}
-                <div className="absolute inset-0 bg-[url('/textures/parchment.png')] bg-cover opacity-100 brightness-95 contrast-110 sepia-[.2] z-0"></div>
+                <div className="absolute inset-0 bg-[url('/src/assets/textures/parchment.png')] bg-cover opacity-100 brightness-95 contrast-110 sepia-[.2] z-0"></div>
 
                 {/* 2. Unified Gold Frame Border (Procedural) */}
                 <div className="absolute inset-1.5 border-[3px] border-double border-tarot-gold/60 rounded-sm z-20 pointer-events-none"></div>
                 <div className="absolute inset-1 border border-tarot-gold/30 rounded z-20 pointer-events-none"></div>
 
                 {/* 3. Content Layer */}
-                <div className="relative w-full h-full z-10 flex items-center justify-center">
+                <div
+                  className="relative w-full h-full z-10 flex items-center justify-center transition-transform duration-500"
+                  style={{ transform: card.isReversed ? 'rotate(180deg)' : 'none' }}
+                >
                   {/* Render RWS Image for ALL cards */}
                   <img
                     src={card?.image || '/card-back.png'}
@@ -172,6 +175,11 @@ const Card = ({ card, isFlipped, onClick, style, language = 'en' }) => {
               <div className="h-[22%] bg-[#1a1a1a] text-[#e0cfa0] flex flex-col justify-center items-center relative z-20 border-t-[4px] border-[#a18c58] shadow-[0_-5px_15px_rgba(0,0,0,0.5)]">
                 <h3 className="mt-0 font-serif font-bold tracking-wider text-sm w-full text-center uppercase drop-shadow-md">
                   {getLocalized(card.name, language)}
+                  {card.isReversed && (
+                    <span className="block text-[10px] text-red-300 opacity-80 mt-0.5">
+                      {language === 'zh' ? '(逆位)' : '(Reversed)'}
+                    </span>
+                  )}
                 </h3>
                 {/* 
                 <div className="w-6 h-[1px] bg-[#a18c58]/50 my-1"></div>

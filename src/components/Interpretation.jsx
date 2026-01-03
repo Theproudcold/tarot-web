@@ -14,6 +14,10 @@ const Interpretation = ({ cards, language = 'en' }) => {
 
   const cleanText = (text) => text ? text.replace(/[。.,，\s]+$/, '') : '';
 
+  const getMeaning = (card) => cleanText(getLocalized(card.isReversed ? card.meaning_reversed : card.meaning_upright));
+
+  const getPositionLabel = (card) => card.isReversed ? (language === 'zh' ? '逆位' : 'Reversed') : (language === 'zh' ? '正位' : 'Upright');
+
   // --- Elemental Analysis ---
   const elements = useMemo(() => {
     const counts = { Fire: 0, Water: 0, Air: 0, Earth: 0 };
@@ -84,9 +88,9 @@ const Interpretation = ({ cards, language = 'en' }) => {
   // --- Energy Resonance Text Generation ---
   const generateResonance = () => {
     if (language === 'zh') {
-      return `这是一场关于${cleanText(getLocalized(past.meaning_upright))}的旅程。此刻，${cleanText(getLocalized(present.meaning_upright))}的能量正在显化，这要求你保持觉知。未来的${cleanText(getLocalized(future.meaning_upright))}预示着只要你信任内在的指引，便能穿越迷雾，抵达真实的彼岸。`;
+      return `这是一场关于${getMeaning(past)}的旅程。此刻，${getMeaning(present)}的能量正在显化，这要求你保持觉知。未来的${getMeaning(future)}预示着只要你信任内在的指引，便能穿越迷雾，抵达真实的彼岸。`;
     }
-    return `This is a journey rooted in ${cleanText(getLocalized(past.meaning_upright))}. Currently, the energy of ${cleanText(getLocalized(present.meaning_upright))} is manifesting, requiring your full awareness. The future promise of ${cleanText(getLocalized(future.meaning_upright))} suggests that if you trust your inner guidance, you will pierce through the fog and reach your true destination.`;
+    return `This is a journey rooted in ${getMeaning(past)}. Currently, the energy of ${getMeaning(present)} is manifesting, requiring your full awareness. The future promise of ${getMeaning(future)} suggests that if you trust your inner guidance, you will pierce through the fog and reach your true destination.`;
   };
 
   return (
@@ -147,10 +151,10 @@ const Interpretation = ({ cards, language = 'en' }) => {
           {/* Past */}
           <div className="bg-gradient-to-r from-black/60 to-transparent p-6 rounded-lg border-t border-white/10">
             <h3 className="text-tarot-gold text-lg mb-2">
-              {t.pastLabel} · {getLocalized(past.name)} · {language === 'zh' ? '正位' : 'Upright'}
+              {t.pastLabel} · {getLocalized(past.name)} · {getPositionLabel(past)}
             </h3>
             <p className="text-gray-300 leading-relaxed pl-4 border-l-2 border-white/20">
-              "{getLocalized(past.meaning_upright)}"
+              "{getMeaning(past)}"
               <br /><span className="text-sm opacity-60 mt-2 block">{language === 'zh' ? '这张牌揭示了你根基中存在的能量...' : 'This card reveals the energy existing at your foundation...'}</span>
             </p>
           </div>
@@ -158,10 +162,10 @@ const Interpretation = ({ cards, language = 'en' }) => {
           {/* Present */}
           <div className="bg-gradient-to-r from-tarot-gold/20 to-transparent p-6 rounded-lg border-l-4 border-tarot-gold">
             <h3 className="text-tarot-gold text-lg mb-2">
-              {t.presentLabel} · {getLocalized(present.name)} · {language === 'zh' ? '正位' : 'Upright'}
+              {t.presentLabel} · {getLocalized(present.name)} · {getPositionLabel(present)}
             </h3>
             <p className="text-gray-200 leading-relaxed pl-4 border-l-2 border-white/20">
-              "{getLocalized(present.meaning_upright)}"
+              "{getMeaning(present)}"
               <br /><span className="text-sm opacity-60 mt-2 block">{language === 'zh' ? '此刻，你正站在一个至关重要的节点...' : 'At this moment, you stand at a crucial junction...'}</span>
             </p>
           </div>
@@ -169,10 +173,10 @@ const Interpretation = ({ cards, language = 'en' }) => {
           {/* Future */}
           <div className="bg-gradient-to-r from-black/60 to-transparent p-6 rounded-lg border-t border-white/10">
             <h3 className="text-tarot-gold text-lg mb-2">
-              {t.futureLabel} · {getLocalized(future.name)} · {language === 'zh' ? '正位' : 'Upright'}
+              {t.futureLabel} · {getLocalized(future.name)} · {getPositionLabel(future)}
             </h3>
             <p className="text-gray-300 leading-relaxed pl-4 border-l-2 border-white/20">
-              "{getLocalized(future.meaning_upright)}"
+              "{getMeaning(future)}"
               <br /><span className="text-sm opacity-60 mt-2 block">{language === 'zh' ? '未来的能量指向...' : 'The future energy points towards...'}</span>
             </p>
           </div>

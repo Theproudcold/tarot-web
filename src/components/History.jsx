@@ -24,7 +24,8 @@ const History = ({ language, t }) => {
           ...record,
           cards: record.cards.map(c => {
             const freshCard = tarotCards.find(tc => tc.id === c.id);
-            return freshCard ? freshCard : c;
+            // Preserve isReversed from the saved record, but get fresh data/images
+            return freshCard ? { ...freshCard, isReversed: c.isReversed } : c;
           })
         }));
         setHistory(hydrated.reverse());
@@ -93,6 +94,7 @@ const History = ({ language, t }) => {
                         src={c.image || '/card-back.png'}
                         alt={t ? getLocalized(c.name) : c.id}
                         className="w-full h-full object-cover opacity-90"
+                        style={{ transform: c.isReversed ? 'rotate(180deg)' : 'none' }}
                       />
                     </div>
                   ))}

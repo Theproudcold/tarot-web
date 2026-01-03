@@ -79,11 +79,7 @@ const CardDetailModal = ({ card, onClose, language = 'en' }) => {
             </div>
 
             {/* Description (Flavor text placeholder if we had it) */}
-            <div className="bg-white/5 p-4 rounded-lg mt-6">
-              <p className="italic text-gray-500 text-sm">
-                Card #{card.id} - {language === 'zh' ? '点击遮罩关闭' : 'Click outside to close'}
-              </p>
-            </div>
+
           </div>
         </div>
       </div>
