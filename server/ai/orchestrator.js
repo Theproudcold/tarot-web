@@ -2,6 +2,7 @@ import { runMultiAgentReading } from './multiAgentOrchestrator.js';
 import { getPhaseLabel } from './agents/shared.js';
 import { createMockReading } from './providers/mockProvider.js';
 import { createOpenAIReading, testOpenAIConnection } from './providers/openaiProvider.js';
+import { getErrorDetail } from './errorUtils.js';
 
 const env = globalThis.process?.env ?? {};
 
@@ -55,9 +56,9 @@ export const resolveEffectiveRuntime = ({ aiConfig = null, orchestration = null 
   };
 };
 
-const emitFallbackPhase = async (payload, options, detail) => {
+const emitFallbackPhase = async (payload, options, error, fallbackDetail) => {
   await emitPhase(options, payload.language, 'fallback', 'triggered', {
-    detail,
+    detail: getErrorDetail(error, fallbackDetail),
   });
 };
 
@@ -77,7 +78,7 @@ export const runReadingOrchestrator = async (payload, options = {}) => {
         return await runMultiAgentReading(payload, options);
       } catch (error) {
         console.error('Multi-agent pipeline failed, falling back to single agent:', error);
-        await emitFallbackPhase(payload, options, error.message || 'Multi-agent pipeline failed');
+        await emitFallbackPhase(payload, options, error, 'Multi-agent pipeline failed');
         return await createOpenAIReading(payload);
       }
     }
@@ -85,7 +86,7 @@ export const runReadingOrchestrator = async (payload, options = {}) => {
     return await createOpenAIReading(payload);
   } catch (error) {
     console.error('OpenAI provider failed, falling back to mock:', error);
-    await emitFallbackPhase(payload, options, error.message || 'OpenAI provider failed');
+    await emitFallbackPhase(payload, options, error, 'OpenAI provider failed');
     return createMockReading(payload);
   }
 };

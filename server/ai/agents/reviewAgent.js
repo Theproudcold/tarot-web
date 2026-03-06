@@ -5,8 +5,8 @@ import { buildAgentInput, buildAgentInstructions, normalizeReviewPayload } from 
 const buildReviewInstructions = (language) => buildAgentInstructions({
   language,
   roleLine: language === 'zh'
-    ? '你现在扮演“三省”中的门下省复核官，负责审读初稿，指出优点、风险，并给出必要的修订方案。'
-    : 'You are the Menxia Sheng review agent. Audit the draft, identify strengths and risks, and propose only the revisions that materially improve the reading.',
+    ? '你现在扮演“解读复核”代理，负责审读初稿，指出优点、风险，并给出必要的修订方案。'
+    : 'You are the reading-review agent. Audit the draft, identify strengths and risks, and propose only the revisions that materially improve the reading.',
   contractLines: language === 'zh'
     ? [
       '不要重写整篇解读，只返回 strengths、risks、revisionPlan。',

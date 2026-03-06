@@ -35,9 +35,9 @@ export const buildAgentInput = ({ introLines, payload }) => [
 
 export const getPhaseLabel = (stage, language = 'zh') => {
   const labels = {
-    draft: getLocalizedText(language, '中书省起草', 'Draft ministry'),
-    review: getLocalizedText(language, '门下省复核', 'Review ministry'),
-    finalize: getLocalizedText(language, '尚书省定稿', 'Finalize ministry'),
+    draft: getLocalizedText(language, '牌意起稿', 'Card draft'),
+    review: getLocalizedText(language, '解读复核', 'Reading review'),
+    finalize: getLocalizedText(language, '结果定稿', 'Final reading'),
     fallback: getLocalizedText(language, '降级回退', 'Fallback'),
   };
 

@@ -133,6 +133,13 @@ const validateConnectionTestRequest = (body) => ({
   orchestration: normalizeOrchestration(body?.orchestration),
 });
 
+const formatPhaseLog = (phase = {}) => {
+  const detail = typeof phase.detail === 'string' && phase.detail.trim() ? ` — ${phase.detail.trim()}` : '';
+  const runtime = [phase.provider, phase.model].filter(Boolean).join(' / ');
+  const suffix = runtime ? ` (${runtime})` : '';
+  return `[reading phase] ${phase.stage || 'unknown'}:${phase.status || 'unknown'}${suffix}${detail}`;
+};
+
 const server = createServer(async (request, response) => {
   if (request.method === 'OPTIONS') {
     response.writeHead(204, commonCorsHeaders);
@@ -183,6 +190,8 @@ const server = createServer(async (request, response) => {
       });
       const result = await runReadingOrchestrator(payload, {
         onPhase: async (phase) => {
+          console.info(formatPhaseLog(phase));
+
           if (!abortedRef.current) {
             writeSseEvent(response, 'phase', phase);
           }
@@ -193,7 +202,14 @@ const server = createServer(async (request, response) => {
           }
         },
       });
-      await streamReadingFrames(response, result.reading, { abortedRef, stage: 'finalize' });
+
+      if (result.nativeFinalStream) {
+        if (!abortedRef.current) {
+          writeSseEvent(response, 'complete', { reading: result.reading, stage: 'finalize' });
+        }
+      } else {
+        await streamReadingFrames(response, result.reading, { abortedRef, stage: 'finalize' });
+      }
     } catch (error) {
       if (!response.headersSent) {
         sendJson(response, 400, { error: error.message || 'Streaming request failed' });

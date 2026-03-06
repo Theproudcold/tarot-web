@@ -5,8 +5,8 @@ import { buildAgentInput, buildAgentInstructions } from './shared.js';
 const buildDraftInstructions = (language) => buildAgentInstructions({
   language,
   roleLine: language === 'zh'
-    ? '你现在扮演“三省”中的中书省起草官，负责先给出一版结构清晰、证据充分的塔罗解读初稿。'
-    : 'You are the Zhongshu Sheng drafting agent. Produce a first-pass tarot interpretation that is structured, evidence-based, and reflective.',
+    ? '你现在扮演“牌意起稿”代理，负责先给出一版结构清晰、证据充分的塔罗解读初稿。'
+    : 'You are the card-draft agent. Produce a first-pass tarot interpretation that is structured, evidence-based, and reflective.',
   contractLines: language === 'zh'
     ? [
       '输出用户可直接阅读的完整初稿。',

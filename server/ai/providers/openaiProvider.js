@@ -1,8 +1,17 @@
 import { aiReadingJsonSchema, mergeReadingWithBase } from '../../../src/lib/readingContract.js';
 import { buildReading, computeElementDistribution, getCardMeaning, getLocalized, getOrientationLabel, readingSlots } from '../../../src/lib/tarotReading.js';
+import { parsePartialJsonObject } from './partialJson.js';
 
 const DEFAULT_OPENAI_BASE_URL = 'https://api.openai.com/v1';
 const env = globalThis.process?.env ?? {};
+
+const normalizeTimeout = (value, fallback) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const DEFAULT_PROVIDER_TIMEOUT_MS = normalizeTimeout(env.OPENAI_REQUEST_TIMEOUT_MS || env.AI_PROVIDER_TIMEOUT_MS, 90000);
+const DEFAULT_PROVIDER_STREAM_TIMEOUT_MS = normalizeTimeout(env.OPENAI_STREAM_TIMEOUT_MS || env.OPENAI_REQUEST_TIMEOUT_MS || env.AI_PROVIDER_TIMEOUT_MS, 180000);
 
 const trimTrailingSlash = (value = '') => value.replace(/\/+$/, '');
 
@@ -183,13 +192,238 @@ const assertApiKey = (apiKey) => {
   }
 };
 
-const readErrorText = async (response, fallbackMessage) => {
-  const errorText = await response.text();
+const createTimeoutState = (timeoutMs, timeoutLabel) => {
+  const controller = new AbortController();
+  let timeoutId = null;
+
+  const reset = () => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  };
+
+  const clear = () => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+  };
+
+  const wrapError = (error) => {
+    if (error?.name === 'AbortError') {
+      return new Error(`${timeoutLabel} timed out after ${timeoutMs}ms`);
+    }
+
+    return error;
+  };
+
+  reset();
+
+  return {
+    controller,
+    timeoutMs,
+    timeoutLabel,
+    reset,
+    clear,
+    wrapError,
+  };
+};
+
+const fetchWithTimeout = async (url, options, timeoutMs, timeoutLabel) => {
+  const timeoutState = createTimeoutState(timeoutMs, timeoutLabel);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: timeoutState.controller.signal,
+    });
+
+    timeoutState.reset();
+
+    return {
+      response,
+      timeoutState,
+    };
+  } catch (error) {
+    timeoutState.clear();
+    throw timeoutState.wrapError(error);
+  }
+};
+
+const readResponseText = async (response, timeoutState) => {
+  if (!response.body) {
+    try {
+      timeoutState?.reset();
+      const text = await response.text();
+      timeoutState?.clear();
+      return text;
+    } catch (error) {
+      timeoutState?.clear();
+      throw timeoutState?.wrapError ? timeoutState.wrapError(error) : error;
+    }
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let text = '';
+
+  try {
+    while (true) {
+      timeoutState?.reset();
+
+      let chunkResult;
+      try {
+        chunkResult = await reader.read();
+      } catch (error) {
+        throw timeoutState?.wrapError ? timeoutState.wrapError(error) : error;
+      }
+
+      const { value, done } = chunkResult;
+      if (done) {
+        break;
+      }
+
+      if (value) {
+        text += decoder.decode(value, { stream: true });
+      }
+    }
+
+    text += decoder.decode();
+    return text;
+  } finally {
+    timeoutState?.clear();
+
+    try {
+      reader.releaseLock();
+    } catch {
+      // noop
+    }
+  }
+};
+
+const readJsonResponse = async (response, timeoutState, fallbackMessage = 'Invalid JSON response') => {
+  const text = await readResponseText(response, timeoutState);
+
+  if (!text) {
+    throw new Error(fallbackMessage);
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(text || fallbackMessage);
+  }
+};
+
+const readErrorText = async (response, fallbackMessage, timeoutState) => {
+  const errorText = await readResponseText(response, timeoutState);
   throw new Error(errorText || fallbackMessage);
 };
 
+const parseSseEventChunk = (rawChunk) => {
+  const lines = rawChunk.split('\n');
+  let event = 'message';
+  const dataLines = [];
+
+  lines.forEach((line) => {
+    if (line.startsWith('event:')) {
+      event = line.slice(6).trim();
+      return;
+    }
+
+    if (line.startsWith('data:')) {
+      dataLines.push(line.slice(5).trim());
+    }
+  });
+
+  if (!dataLines.length) {
+    return null;
+  }
+
+  return {
+    event,
+    rawData: dataLines.join('\n'),
+  };
+};
+
+const consumeSseStream = async (stream, onEvent, timeoutState = null) => {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    while (true) {
+      timeoutState?.reset();
+
+      let chunkResult;
+      try {
+        chunkResult = await reader.read();
+      } catch (error) {
+        throw timeoutState?.wrapError ? timeoutState.wrapError(error) : error;
+      }
+
+      const { value, done } = chunkResult;
+      if (done) {
+        break;
+      }
+
+      timeoutState?.reset();
+      buffer += decoder.decode(value, { stream: true });
+      const chunks = buffer.split('\n\n');
+      buffer = chunks.pop() || '';
+
+      for (const chunk of chunks) {
+        const parsed = parseSseEventChunk(chunk.trim());
+        if (parsed) {
+          await onEvent(parsed);
+        }
+      }
+    }
+
+    const trailing = buffer.trim();
+    if (trailing) {
+      const parsed = parseSseEventChunk(trailing);
+      if (parsed) {
+        await onEvent(parsed);
+      }
+    }
+  } finally {
+    timeoutState?.clear();
+
+    try {
+      reader.releaseLock();
+    } catch {
+      // noop
+    }
+  }
+};
+
+const getStreamErrorMessage = (payload, fallbackMessage) => payload?.error?.message || payload?.message || payload?.detail || fallbackMessage;
+
+const emitPartialStructuredObject = async ({ rawText, partialParser, onPartialObject, state, meta }) => {
+  if (typeof onPartialObject !== 'function' || !rawText) {
+    return;
+  }
+
+  const rawPartialObject = parsePartialJsonObject(rawText);
+  const partialObject = typeof partialParser === 'function'
+    ? partialParser(rawPartialObject, rawText)
+    : rawPartialObject;
+
+  if (!partialObject || typeof partialObject !== 'object' || !Object.keys(partialObject).length) {
+    return;
+  }
+
+  const serialized = JSON.stringify(partialObject);
+  if (serialized === state.lastSerialized) {
+    return;
+  }
+
+  state.lastSerialized = serialized;
+  await onPartialObject(partialObject, meta);
+};
+
 const requestResponsesStructuredTask = async ({ endpoint, apiKey, model, schemaName, schema, instructions, input }) => {
-  const response = await fetch(endpoint, {
+  const { response, timeoutState } = await fetchWithTimeout(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -208,17 +442,105 @@ const requestResponsesStructuredTask = async ({ endpoint, apiKey, model, schemaN
         },
       },
     }),
-  });
+  }, DEFAULT_PROVIDER_TIMEOUT_MS, 'OpenAI request');
 
   if (!response.ok) {
-    await readErrorText(response, `OpenAI request failed with status ${response.status}`);
+    await readErrorText(response, `OpenAI request failed with status ${response.status}`, timeoutState);
   }
 
-  return extractStructuredOutput(await response.json());
+  return extractStructuredOutput(await readJsonResponse(response, timeoutState, 'OpenAI request returned an invalid JSON body'));
+};
+
+const requestResponsesStructuredTaskStream = async ({ endpoint, apiKey, model, schemaName, schema, instructions, input, partialParser, onPartialObject, meta }) => {
+  const { response, timeoutState } = await fetchWithTimeout(endpoint, {
+    method: 'POST',
+    headers: {
+      Accept: 'text/event-stream',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      stream: true,
+      instructions,
+      input,
+      text: {
+        format: {
+          type: 'json_schema',
+          name: schemaName,
+          schema,
+          strict: true,
+        },
+      },
+    }),
+  }, DEFAULT_PROVIDER_STREAM_TIMEOUT_MS, 'OpenAI streaming request');
+
+  if (!response.ok || !response.body) {
+    await readErrorText(response, `OpenAI streaming request failed with status ${response.status}`, timeoutState);
+  }
+
+  const state = { rawText: '', lastSerialized: '' };
+  let completedPayload = null;
+
+  await consumeSseStream(response.body, async ({ event, rawData }) => {
+    if (!rawData || rawData === '[DONE]') {
+      return;
+    }
+
+    const payload = JSON.parse(rawData);
+    const eventName = event === 'message' ? payload?.type || event : event;
+
+    if (eventName === 'response.output_text.delta') {
+      const delta = typeof payload?.delta === 'string' ? payload.delta : '';
+      if (!delta) {
+        return;
+      }
+      state.rawText += delta;
+      await emitPartialStructuredObject({
+        rawText: state.rawText,
+        partialParser,
+        onPartialObject,
+        state,
+        meta,
+      });
+      return;
+    }
+
+    if (eventName === 'response.output_text.done') {
+      const text = typeof payload?.text === 'string' ? payload.text : '';
+      if (text && text !== state.rawText) {
+        state.rawText = text;
+        await emitPartialStructuredObject({
+          rawText: state.rawText,
+          partialParser,
+          onPartialObject,
+          state,
+          meta,
+        });
+      }
+      return;
+    }
+
+    if (eventName === 'response.completed') {
+      completedPayload = payload?.response || payload;
+      return;
+    }
+
+    if (eventName === 'response.error' || eventName === 'response.failed' || eventName === 'error') {
+      throw new Error(getStreamErrorMessage(payload, 'OpenAI streaming request failed'));
+    }
+  }, timeoutState);
+
+  const parsed = extractJsonObject(state.rawText) || extractStructuredOutput(completedPayload);
+
+  return {
+    parsed,
+    rawText: state.rawText,
+  };
 };
 
 const requestChatCompletionsStructuredTask = async ({ endpoint, apiKey, model, instructions, input, temperature = 0.7 }) => {
-  const response = await fetch(endpoint, {
+  const { response, timeoutState } = await fetchWithTimeout(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -238,13 +560,79 @@ const requestChatCompletionsStructuredTask = async ({ endpoint, apiKey, model, i
         },
       ],
     }),
-  });
+  }, DEFAULT_PROVIDER_TIMEOUT_MS, 'OpenAI-compatible request');
 
   if (!response.ok) {
-    await readErrorText(response, `OpenAI-compatible request failed with status ${response.status}`);
+    await readErrorText(response, `OpenAI-compatible request failed with status ${response.status}`, timeoutState);
   }
 
-  return extractChatStructuredOutput(await response.json());
+  return extractChatStructuredOutput(await readJsonResponse(response, timeoutState, 'OpenAI-compatible request returned an invalid JSON body'));
+};
+
+const requestChatCompletionsStructuredTaskStream = async ({ endpoint, apiKey, model, instructions, input, temperature = 0.7, partialParser, onPartialObject, meta }) => {
+  const { response, timeoutState } = await fetchWithTimeout(endpoint, {
+    method: 'POST',
+    headers: {
+      Accept: 'text/event-stream',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      temperature,
+      stream: true,
+      messages: [
+        {
+          role: 'system',
+          content: instructions,
+        },
+        {
+          role: 'user',
+          content: input,
+        },
+      ],
+    }),
+  }, DEFAULT_PROVIDER_STREAM_TIMEOUT_MS, 'OpenAI-compatible streaming request');
+
+  if (!response.ok || !response.body) {
+    await readErrorText(response, `OpenAI-compatible streaming request failed with status ${response.status}`, timeoutState);
+  }
+
+  const state = { rawText: '', lastSerialized: '' };
+
+  await consumeSseStream(response.body, async ({ rawData }) => {
+    if (!rawData || rawData === '[DONE]') {
+      return;
+    }
+
+    const payload = JSON.parse(rawData);
+
+    if (payload?.error) {
+      throw new Error(getStreamErrorMessage(payload, 'OpenAI-compatible streaming request failed'));
+    }
+
+    const delta = typeof payload?.choices?.[0]?.delta?.content === 'string'
+      ? payload.choices[0].delta.content
+      : extractChatContentText(payload?.choices?.[0]?.delta?.content);
+
+    if (!delta) {
+      return;
+    }
+
+    state.rawText += delta;
+    await emitPartialStructuredObject({
+      rawText: state.rawText,
+      partialParser,
+      onPartialObject,
+      state,
+      meta,
+    });
+  }, timeoutState);
+
+  return {
+    parsed: extractJsonObject(state.rawText),
+    rawText: state.rawText,
+  };
 };
 
 export const runStructuredOpenAITask = async ({ aiConfig, schemaName, schema, instructions, input, temperature = 0.7 }) => {
@@ -283,8 +671,55 @@ export const runStructuredOpenAITask = async ({ aiConfig, schemaName, schema, in
   };
 };
 
+export const streamStructuredOpenAITask = async ({ aiConfig, schemaName, schema, instructions, input, temperature = 0.7, partialParser, onPartialObject }) => {
+  const { apiKey, model, endpointConfig } = resolveOpenAIConfig(aiConfig);
+  assertApiKey(apiKey);
+
+  const meta = {
+    model,
+    source: endpointConfig.source,
+    endpoint: endpointConfig.endpoint,
+    mode: endpointConfig.mode,
+  };
+
+  const result = endpointConfig.mode === 'responses'
+    ? await requestResponsesStructuredTaskStream({
+      endpoint: endpointConfig.endpoint,
+      apiKey,
+      model,
+      schemaName,
+      schema,
+      instructions,
+      input,
+      partialParser,
+      onPartialObject,
+      meta,
+    })
+    : await requestChatCompletionsStructuredTaskStream({
+      endpoint: endpointConfig.endpoint,
+      apiKey,
+      model,
+      instructions,
+      input,
+      temperature,
+      partialParser,
+      onPartialObject,
+      meta,
+    });
+
+  if (!result.parsed) {
+    throw new Error('AI response did not include structured output');
+  }
+
+  return {
+    parsed: result.parsed,
+    rawText: result.rawText,
+    ...meta,
+  };
+};
+
 const requestResponsesConnection = async ({ endpoint, apiKey, model }) => {
-  const response = await fetch(endpoint, {
+  const { response, timeoutState } = await fetchWithTimeout(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -295,17 +730,17 @@ const requestResponsesConnection = async ({ endpoint, apiKey, model }) => {
       input: 'Reply with OK.',
       max_output_tokens: 12,
     }),
-  });
+  }, DEFAULT_PROVIDER_TIMEOUT_MS, 'OpenAI connection test');
 
   if (!response.ok) {
-    await readErrorText(response, `OpenAI connection test failed with status ${response.status}`);
+    await readErrorText(response, `OpenAI connection test failed with status ${response.status}`, timeoutState);
   }
 
-  await response.json();
+  await readJsonResponse(response, timeoutState, 'OpenAI connection test returned an invalid JSON body');
 };
 
 const requestChatCompletionConnection = async ({ endpoint, apiKey, model }) => {
-  const response = await fetch(endpoint, {
+  const { response, timeoutState } = await fetchWithTimeout(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -322,13 +757,13 @@ const requestChatCompletionConnection = async ({ endpoint, apiKey, model }) => {
         },
       ],
     }),
-  });
+  }, DEFAULT_PROVIDER_TIMEOUT_MS, 'OpenAI-compatible connection test');
 
   if (!response.ok) {
-    await readErrorText(response, `OpenAI-compatible connection test failed with status ${response.status}`);
+    await readErrorText(response, `OpenAI-compatible connection test failed with status ${response.status}`, timeoutState);
   }
 
-  await response.json();
+  await readJsonResponse(response, timeoutState, 'OpenAI-compatible connection test returned an invalid JSON body');
 };
 
 export const testOpenAIConnection = async ({ aiConfig } = {}) => {
