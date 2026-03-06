@@ -201,16 +201,16 @@ complete
 ```mermaid
 flowchart TD
   UI[React 阅读界面] --> SETTINGS[网页内 AI 配置]
-  UI --> STREAM[/api/reading/stream]
-  UI --> JSON[/api/reading]
+  UI --> STREAM["/api/reading/stream"]
+  UI --> JSON["/api/reading"]
 
   SETTINGS --> STREAM
   SETTINGS --> JSON
 
-  STREAM --> API[server/index.js]
+  STREAM --> API["server/index.js"]
   JSON --> API
   API --> HYDRATE[卡片补全 / 请求校验]
-  HYDRATE --> ORCH[server/ai/orchestrator.js]
+  HYDRATE --> ORCH["server/ai/orchestrator.js"]
 
   ORCH --> MODE{provider / orchestration}
 
@@ -222,8 +222,8 @@ flowchart TD
   REVIEW --> FINALIZE[FinalizeAgent 结果定稿]
   FINALIZE --> FINAL_STREAM[原生 finalize 流式输出]
 
-  FINALIZE -.失败.- FALLBACK_SINGLE[回退到单代理]
-  FALLBACK_SINGLE -.失败.- FALLBACK_MOCK[回退到 Mock]
+  FINALIZE -.失败.-> FALLBACK_SINGLE[回退到单代理]
+  FALLBACK_SINGLE -.失败.-> FALLBACK_MOCK[回退到 Mock]
 
   SINGLE --> MERGE[Reading Contract Merge]
   MOCK --> MERGE
@@ -231,7 +231,7 @@ flowchart TD
   FALLBACK_SINGLE --> MERGE
   FALLBACK_MOCK --> MERGE
 
-  MERGE --> SSE[SSE: meta / phase / partial / complete]
+  MERGE --> SSE["SSE: meta / phase / partial / complete"]
   SSE --> UI
 ```
 
