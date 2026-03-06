@@ -1,52 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { tarotCards } from '../data/tarotCards';
+import React, { useEffect, useState } from 'react';
 import Interpretation from './Interpretation';
 import Card from './Card';
+import HistoryCardThumbnail from './HistoryCardThumbnail';
+import { clearHistoryRecords, loadHistoryRecords } from '../lib/historyStorage';
+import { getReadingSourceLabel } from '../lib/readingSource.js';
+import { getLocalized, getOrientationLabel, readingSlots } from '../lib/tarotReading.js';
 
 const History = ({ language, t }) => {
   const [history, setHistory] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
 
-  // Helper
-  const getLocalized = (obj) => {
-    if (typeof obj === 'string') return obj;
-    return obj[language] || obj['en'] || '';
-  };
-
-  const resolvePath = (path) => {
-    if (!path) return '';
-    if (path.startsWith('http')) return path;
-    const base = import.meta.env.BASE_URL;
-    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-    return `${base}${cleanPath}`;
-  };
-
   useEffect(() => {
-    const saved = localStorage.getItem('tarot_history');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        // Re-hydrate cards from current tarotCards data to ensure new image paths are used
-        // This fixes the issue where old history has stale 'image: null' or old paths
-        const hydrated = parsed.map(record => ({
-          ...record,
-          cards: record.cards.map(c => {
-            const freshCard = tarotCards.find(tc => tc.id === c.id);
-            // Preserve isReversed from the saved record, but get fresh data/images
-            return freshCard ? { ...freshCard, isReversed: c.isReversed } : c;
-          })
-        }));
-        setHistory(hydrated.reverse());
-      } catch (e) {
-        console.error("Failed to parse history", e);
-      }
-    }
-  }, []);
+    setHistory(loadHistoryRecords(language));
+  }, [language]);
 
   const clearHistory = () => {
-    localStorage.removeItem('tarot_history');
+    clearHistoryRecords();
     setHistory([]);
-  }
+  };
 
   const formatDate = (isoString) => {
     const date = new Date(isoString);
@@ -58,80 +29,124 @@ const History = ({ language, t }) => {
 
   if (history.length === 0) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center p-10 min-h-[400px]">
-        <div className="text-6xl mb-6 text-tarot-gold opacity-60 drop-shadow-[0_0_15px_rgba(212,175,55,0.4)]">
-          {/* Crystal Ball Icon */}
+      <div className="flex h-full min-h-[400px] w-full flex-col items-center justify-center p-10">
+        <div className="mb-6 text-6xl text-tarot-gold opacity-60 drop-shadow-[0_0_15px_rgba(212,175,55,0.4)]">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
-        <p className="text-tarot-gold/60 font-serif text-xl tracking-wider">{t('noHistory')}</p>
+        <p className="font-serif text-xl tracking-wider text-tarot-gold/60">{t('noHistory')}</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4 animate-fadeIn">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl text-tarot-gold font-serif">{t('historyTitle')}</h2>
+    <div className="mx-auto w-full max-w-5xl p-4 animate-fadeIn">
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <h2 className="text-3xl font-serif text-tarot-gold">{t('historyTitle')}</h2>
         <button
           onClick={clearHistory}
-          className="text-xs text-red-400 hover:text-red-300 border border-red-900 px-2 py-1 rounded transition-colors"
+          className="rounded border border-red-900 px-2 py-1 text-xs text-red-400 transition-colors hover:text-red-300"
         >
           {t('deleteHistory')}
         </button>
       </div>
 
-      <div className="space-y-6">
-        {history.map((record) => (
-          <div key={record.id} className="bg-white/5 border border-white/10 rounded-xl p-4 transition-all hover:bg-white/10">
-            <div
-              className="flex justify-between items-center cursor-pointer"
-              onClick={() => setExpandedId(expandedId === record.id ? null : record.id)}
-            >
-              <div className="flex flex-col text-left">
-                <span className="text-tarot-gold text-sm font-bold">
-                  {t('historyDatePrefix')} {formatDate(record.timestamp)}
-                </span>
-                <div className="flex gap-2 mt-2">
-                  {/* Mini card previews */}
-                  {/* Mini card previews - using direct img for stability */}
-                  {record.cards.map(c => (
-                    <div key={c.id} className="w-10 h-16 rounded border border-gray-600 flex items-center justify-center overflow-hidden relative bg-black">
-                      <img
-                        src={resolvePath(c.image) || resolvePath('/card-back.png')}
-                        alt={t ? getLocalized(c.name) : c.id}
-                        className="w-full h-full object-cover opacity-90"
-                        style={{ transform: c.isReversed ? 'rotate(180deg)' : 'none' }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="text-tarot-gold text-2xl transform transition-transform duration-300" style={{ transform: expandedId === record.id ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                ▼
-              </div>
-            </div>
+      <div className="space-y-5">
+        {history.map((record) => {
+          const sourceLabel = getReadingSourceLabel(record.reading?.source || 'local-fallback', language, record.reading?.providerLabel || '');
+          const isExpanded = expandedId === record.id;
 
-            {expandedId === record.id && (
-              <div className="mt-6 pt-6 border-t border-white/10 animate-fadeIn">
-                {/* Re-use Interpretation Comp for the details */}
-                <div className="flex justify-center gap-4 mb-6">
-                  {record.cards.map(card => (
-                    <Card
-                      key={card.id}
-                      card={card}
-                      isFlipped={true}
-                      language={language}
-                      className="w-[80px] h-[136px] md:w-[100px] md:h-[170px] m-[5px]"
-                    />
-                  ))}
+          return (
+            <div
+              key={record.id}
+              className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition-all duration-300 hover:border-tarot-gold/20 hover:bg-white/[0.07] md:p-5"
+            >
+              <div
+                className="cursor-pointer"
+                onClick={() => setExpandedId(isExpanded ? null : record.id)}
+              >
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full border border-tarot-gold/30 bg-tarot-gold/10 px-3 py-1 text-xs font-semibold text-tarot-gold">
+                        {t('historyDatePrefix')} {formatDate(record.timestamp)}
+                      </span>
+                      <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-gray-400">
+                        {t('sourcePrefix')} {sourceLabel}
+                      </span>
+                    </div>
+
+                    {record.question && (
+                      <p className="mt-3 break-words text-sm leading-6 text-gray-200">
+                        {t('questionPrefix')} {record.question}
+                      </p>
+                    )}
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {record.cards.map((card, index) => {
+                        const slotKey = readingSlots[index] || null;
+                        const slotLabel = slotKey ? t(slotKey) : `${index + 1}`;
+                        const title = getLocalized(card.name, language);
+                        const orientationLabel = getOrientationLabel(card, language);
+
+                        return (
+                          <span
+                            key={`${record.id}-${card.id}-${index}`}
+                            className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs text-gray-300"
+                          >
+                            {slotLabel}: {title} · {orientationLabel}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4 lg:justify-end">
+                    <div className="flex gap-2 sm:gap-3">
+                      {record.cards.map((card, index) => (
+                        <HistoryCardThumbnail
+                          key={`${record.id}-thumb-${card.id}-${index}`}
+                          card={card}
+                          index={index}
+                          language={language}
+                          t={t}
+                        />
+                      ))}
+                    </div>
+                    <div
+                      className="shrink-0 text-2xl text-tarot-gold transition-transform duration-300"
+                      style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                    >
+                      ▼
+                    </div>
+                  </div>
                 </div>
-                <Interpretation cards={record.cards} language={language} t={t} />
               </div>
-            )}
-          </div>
-        ))}
+
+              {isExpanded && (
+                <div className="mt-6 animate-fadeIn border-t border-white/10 pt-6">
+                  <div className="mb-6 flex flex-wrap justify-center gap-4">
+                    {record.cards.map((card, index) => (
+                      <div key={`${record.id}-full-${card.id}-${index}`} className="flex flex-col items-center gap-2">
+                        <span className="rounded-full border border-tarot-gold/30 bg-tarot-gold/10 px-3 py-1 text-xs text-tarot-gold">
+                          {t(readingSlots[index] || 'past')}
+                        </span>
+                        <Card
+                          card={card}
+                          isFlipped={true}
+                          language={language}
+                          className="m-[5px] h-[136px] w-[80px] md:h-[170px] md:w-[100px]"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <Interpretation cards={record.cards} language={language} reading={record.reading} t={t} />
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

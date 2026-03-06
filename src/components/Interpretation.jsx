@@ -1,204 +1,482 @@
 import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { getOrchestrationLabel } from '../lib/orchestrationLabels.js';
+import { getReadingSourceLabel } from '../lib/readingSource.js';
+import { buildReading } from '../lib/tarotReading';
 
-const Interpretation = ({ cards, language = 'en' }) => {
-  if (!cards || cards.length < 3) return null;
+const labelsByLanguage = {
+  en: {
+    elementalTitle: 'Elemental Energy Analysis',
+    dominantTitle: 'Dominant Energy',
+    quoteTitle: 'Whispers of the Stars',
+    summaryTitle: 'Synthesis',
+    cardsTitle: 'Card by Card',
+    adviceTitle: 'Actionable Guidance',
+    mantraTitle: 'Anchor Phrase',
+    followUpsTitle: 'Reflection Prompts',
+    safetyTitle: 'Grounding Note',
+  },
+  zh: {
+    elementalTitle: '元素能量分析',
+    dominantTitle: '主导能量',
+    quoteTitle: '星辰低语',
+    summaryTitle: '整体综合',
+    cardsTitle: '逐张解读',
+    adviceTitle: '行动指引',
+    mantraTitle: '锚定语',
+    followUpsTitle: '反思提问',
+    safetyTitle: '落地提醒',
+  },
+};
 
-  const [past, present, future] = cards;
+const phaseLabelsByLanguage = {
+  en: {
+    draft: 'Draft ministry',
+    review: 'Review ministry',
+    finalize: 'Finalize ministry',
+    fallback: 'Fallback',
+  },
+  zh: {
+    draft: '中书省起草',
+    review: '门下省复核',
+    finalize: '尚书省定稿',
+    fallback: '降级回退',
+  },
+};
 
-  // --- Helpers ---
-  const getLocalized = (obj) => {
-    if (typeof obj === 'string') return obj;
-    return obj[language] || obj['en'] || '';
-  };
+const phaseStatusLabelsByLanguage = {
+  en: {
+    pending: 'Pending',
+    started: 'In Progress',
+    completed: 'Completed',
+    triggered: 'Triggered',
+  },
+  zh: {
+    pending: '等待中',
+    started: '进行中',
+    completed: '已完成',
+    triggered: '已触发',
+  },
+};
 
-  const cleanText = (text) => text ? text.replace(/[。.,，\s]+$/, '') : '';
+const barColors = {
+  Fire: 'bg-red-500',
+  Water: 'bg-blue-500',
+  Air: 'bg-yellow-400',
+  Earth: 'bg-green-500',
+};
 
-  const getMeaning = (card) => cleanText(getLocalized(card.isReversed ? card.meaning_reversed : card.meaning_upright));
+const phaseOrder = ['draft', 'review', 'finalize', 'fallback'];
+const pipelineStages = ['draft', 'review', 'finalize'];
+const loadingDots = ['delay-0', 'delay-150', 'delay-300'];
 
-  const getPositionLabel = (card) => card.isReversed ? (language === 'zh' ? '逆位' : 'Reversed') : (language === 'zh' ? '正位' : 'Upright');
+const StreamingPlaceholder = ({ text }) => (
+  <span className="inline-flex items-center gap-2 text-sm text-gray-500 animate-pulse">
+    <span>{text}</span>
+    <span className="flex items-center gap-1">
+      {loadingDots.map((delay) => (
+        <span key={delay} className={`h-1.5 w-1.5 rounded-full bg-tarot-gold/70 animate-pulse ${delay}`}></span>
+      ))}
+    </span>
+  </span>
+);
 
-  // --- Elemental Analysis ---
-  const elements = useMemo(() => {
-    const counts = { Fire: 0, Water: 0, Air: 0, Earth: 0 };
-    cards.forEach(c => {
-      if (c.element && counts[c.element] !== undefined) {
-        counts[c.element]++;
-      }
-    });
-    const total = 3;
-    const analysis = Object.keys(counts).map(k => ({
-      name: k,
-      percent: Math.round((counts[k] / total) * 100),
-      label: { en: k, zh: k === 'Fire' ? '火' : k === 'Water' ? '水' : k === 'Air' ? '风' : '土' }
-    }));
+const getPhaseTone = (status) => {
+  switch (status) {
+    case 'completed':
+      return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-100';
+    case 'started':
+      return 'border-sky-500/30 bg-sky-500/10 text-sky-100';
+    case 'triggered':
+      return 'border-amber-500/30 bg-amber-500/10 text-amber-100';
+    default:
+      return 'border-white/10 bg-white/5 text-gray-300';
+  }
+};
 
-    // Find dominant
-    const dominant = analysis.reduce((prev, current) => (prev.percent > current.percent) ? prev : current);
-    return { distribution: analysis, dominant };
-  }, [cards]);
-
-  // --- Static Creative Text (Simulated AI) ---
-  const quotes = {
-    zh: [
-      "“在欲望的荆棘丛中，你曾为自己戴上金锁；如今，抉择的晨星已悬于眉睫。”",
-      "“命运并非在手中，而是在你的决断之中。风起之时，便是起航之日。”",
-      "“你灵魂的每一次颤抖，都是星辰给你的指引。倾听它，不要怀疑。”"
-    ],
-    en: [
-      "“Amidst the thorns of desire, you forged your own golden chains; now, the morning star of choice hangs upon your brow.”",
-      "“Destiny is determined not by what you hold, but by what you decide. When the wind rises, we must try to live.”",
-      "“Every tremor of your soul is guidance from the stars. Listen to it without doubt.”"
-    ]
-  };
-
-  const advices = {
-    zh: [
-      "请在新月或清晨日出时分，进行一项“释放与接纳”的仪式。写下旧的束缚，将其燃烧。",
-      "并在窗台放置一颗水晶，感受月光给予的净化之力。",
-      "找一个安静的午后，整理你的空间，因为外在的秩序往往映射内在的清明。"
-    ],
-    en: [
-      "Perform a 'Release and Accept' ritual at sunrise. Write down old bindings and burn the paper safely.",
-      "Place a crystal on your windowsill to absorb the cleansing light of the moon.",
-      "Spend a quiet afternoon organizing your space, for outer order often reflects inner clarity."
-    ]
-  };
-
-  // Pseudo-random pick based on card IDs
-  const seed = cards[0].id + cards[1].id + cards[2].id;
-  const quote = quotes[language][seed % quotes[language].length];
-  const advice = advices[language][seed % advices[language].length];
-
-  // --- Localized Labels ---
-  const t = {
-    elementalTitle: language === 'zh' ? "元素能量分析" : "Elemental Energy Analysis",
-    dominant: language === 'zh' ? "主导能量" : "Dominant Energy",
-    whisperTitle: language === 'zh' ? "✧ 星辰的低语 ✧" : "✧ Whispers of the Stars ✧",
-    resonanceTitle: language === 'zh' ? "◈ 能量共鸣" : "◈ Energy Resonance",
-    deepDiveTitle: language === 'zh' ? "❖ 深演：命途之迹" : "❖ Deep Dive: Path of Fate",
-    pastLabel: language === 'zh' ? "【过去/根源】" : "【Past/Root】",
-    presentLabel: language === 'zh' ? "【现在/处境】" : "【Present/Situation】",
-    futureLabel: language === 'zh' ? "【未来/趋向】" : "【Future/Trend】",
-    adviceTitle: language === 'zh' ? "⚖ 启示：宇宙的密语" : "⚖ Revelation: Cosmic Whisper",
-    mantraTitle: language === 'zh' ? "🔮 命运箴言" : "🔮 Oracle's Mantra",
-    mantraText: language === 'zh' ? "“锁链自铸，亦能自熔；择你所爱，光便从内而生。”" : "“Chains self-forged can be self-melted; choose what you love, and light will spring from within.”"
-  };
-
-  // --- Energy Resonance Text Generation ---
-  const generateResonance = () => {
-    if (language === 'zh') {
-      return `这是一场关于${getMeaning(past)}的旅程。此刻，${getMeaning(present)}的能量正在显化，这要求你保持觉知。未来的${getMeaning(future)}预示着只要你信任内在的指引，便能穿越迷雾，抵达真实的彼岸。`;
-    }
-    return `This is a journey rooted in ${getMeaning(past)}. Currently, the energy of ${getMeaning(present)} is manifesting, requiring your full awareness. The future promise of ${getMeaning(future)} suggests that if you trust your inner guidance, you will pierce through the fog and reach your true destination.`;
-  };
+const PhaseTimeline = ({ displayedPhases, orchestrationLabel, timelineState, t }) => {
+  if (!displayedPhases.length && !orchestrationLabel) {
+    return null;
+  }
 
   return (
-    <div className="w-full max-w-4xl mx-auto mt-8 text-left animate-fadeIn font-serif text-gray-200">
+    <div className="mb-5 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+      <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold uppercase tracking-[0.25em] text-tarot-gold/80">
+            {t?.('aiPhaseTimelineTitle') || 'Pipeline'}
+          </h3>
+          <p className="mt-1 text-xs text-gray-400">
+            {timelineState?.hint || t?.('aiPhaseTimelineHint') || 'Track the current interpretation stage.'}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {timelineState?.label && (
+            <span className={`rounded-full border px-3 py-1 text-xs uppercase tracking-widest ${timelineState.tone}`}>
+              {timelineState.label}
+            </span>
+          )}
+          {orchestrationLabel && (
+            <span className="rounded-full border border-tarot-gold/30 bg-tarot-gold/10 px-3 py-1 text-xs uppercase tracking-widest text-tarot-gold/90">
+              {t?.('aiOrchestrationLabel') || 'Mode'}: {orchestrationLabel}
+            </span>
+          )}
+        </div>
+      </div>
 
-      {/* 1. Elemental & Dominant */}
-      <div className="bg-black/40 backdrop-blur-md rounded-xl border border-tarot-gold/30 p-4 md:p-8 mb-4 md:mb-8">
-        <h2 className="text-xl text-tarot-gold mb-6 border-b border-tarot-gold/20 pb-2">{t.elementalTitle}</h2>
-        <div className="flex flex-col md:flex-row gap-8 items-center">
-          {/* Chart */}
-          <div className="flex gap-4 items-end h-32 w-full md:w-1/2 justify-around">
-            {elements.distribution.map(stat => (
-              <div key={stat.name} className="flex flex-col items-center gap-2 h-full justify-end w-12">
+      {!!displayedPhases.length && (
+        <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-4">
+          {displayedPhases.map((phase, index) => {
+            const isActive = phase.status === 'started';
+            const marker = phase.stage === 'fallback' ? '!' : String(index + 1);
+
+            return (
+              <div
+                key={phase.stage}
+                className={`rounded-xl border p-4 transition-all ${getPhaseTone(phase.status)} ${isActive ? 'shadow-[0_0_20px_rgba(56,189,248,0.15)]' : ''}`}
+              >
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <span className={`flex h-8 w-8 items-center justify-center rounded-full border text-sm font-semibold ${isActive ? 'animate-pulse border-current' : 'border-current/40'}`}>
+                    {marker}
+                  </span>
+                  <span className="text-[11px] uppercase tracking-[0.2em] opacity-80">
+                    {phase.statusLabel}
+                  </span>
+                </div>
+                <div className="text-sm font-medium leading-relaxed">
+                  {phase.label}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const Interpretation = ({
+  cards,
+  language = 'en',
+  reading,
+  loading = false,
+  phases = [],
+  orchestration = null,
+  onRetry,
+  t,
+}) => {
+  const labels = labelsByLanguage[language];
+  const phaseLabels = phaseLabelsByLanguage[language] || phaseLabelsByLanguage.en;
+  const phaseStatusLabels = phaseStatusLabelsByLanguage[language] || phaseStatusLabelsByLanguage.en;
+  const resolvedReading = useMemo(() => reading || buildReading(cards, { language }), [cards, language, reading]);
+  const resolvedOrchestration = orchestration || reading?.orchestration || resolvedReading?.orchestration || null;
+
+  const displayedPhases = useMemo(() => {
+    const phaseMap = new Map(
+      (phases || [])
+        .filter((item) => item?.stage)
+        .map((item) => [item.stage, item])
+    );
+
+    const completedPipelineStages = Array.isArray(resolvedReading?.agentPipeline)
+      ? resolvedReading.agentPipeline.filter((stage) => pipelineStages.includes(stage))
+      : [];
+
+    if (!loading && completedPipelineStages.length > 0) {
+      completedPipelineStages.forEach((stage) => {
+        const phase = phaseMap.get(stage);
+        phaseMap.set(stage, {
+          ...phase,
+          stage,
+          status: 'completed',
+          label: phase?.label || phaseLabels[stage],
+        });
+      });
+    }
+
+    const defaultStages = resolvedOrchestration === 'multi'
+      ? (completedPipelineStages.length > 0 ? completedPipelineStages : pipelineStages)
+      : [];
+
+    const items = defaultStages.map((stage) => {
+      const phase = phaseMap.get(stage);
+      return {
+        stage,
+        label: phase?.label || phaseLabels[stage],
+        status: phase?.status || 'pending',
+        statusLabel: phaseStatusLabels[phase?.status || 'pending'] || phaseStatusLabels.pending,
+      };
+    });
+
+    if (phaseMap.has('fallback')) {
+      const phase = phaseMap.get('fallback');
+      items.push({
+        stage: 'fallback',
+        label: phase?.label || phaseLabels.fallback,
+        status: phase?.status || 'triggered',
+        statusLabel: phaseStatusLabels[phase?.status || 'triggered'] || phaseStatusLabels.triggered,
+      });
+    }
+
+    if (items.length > 0) {
+      return items;
+    }
+
+    return [...phaseMap.values()]
+      .sort((left, right) => phaseOrder.indexOf(left.stage) - phaseOrder.indexOf(right.stage))
+      .map((phase) => ({
+        ...phase,
+        label: phase.label || phaseLabels[phase.stage] || phase.stage,
+        statusLabel: phaseStatusLabels[phase.status] || phaseStatusLabels.pending,
+      }));
+  }, [loading, phaseLabels, phaseStatusLabels, phases, resolvedOrchestration, resolvedReading]);
+
+  const timelineState = useMemo(() => {
+    const activePhases = displayedPhases.filter((phase) => pipelineStages.includes(phase.stage));
+    const hasFallback = displayedPhases.some((phase) => phase.stage === 'fallback');
+    const isComplete = activePhases.length > 0 && activePhases.every((phase) => phase.status === 'completed');
+    const isRunning = activePhases.some((phase) => phase.status === 'started');
+    const isWaiting = activePhases.some((phase) => phase.status === 'pending');
+
+    if (loading && isComplete) {
+      return {
+        kind: 'finalize-sync',
+        label: t?.('aiPhaseTimelineDone') || '流程已完成',
+        hint: t?.('aiPhaseTimelineFinalizeStreaming') || '三省流程已结束，当前仅在同步最终文本。',
+        tone: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-100',
+      };
+    }
+
+    if (hasFallback) {
+      return {
+        kind: 'fallback',
+        label: t?.('aiPhaseTimelineFallback') || '已回退',
+        hint: t?.('aiPhaseTimelineHint') || 'Track the current interpretation stage.',
+        tone: 'border-amber-500/30 bg-amber-500/10 text-amber-100',
+      };
+    }
+
+    if (isComplete) {
+      return {
+        kind: 'completed',
+        label: t?.('aiPhaseTimelineDone') || '流程已完成',
+        hint: t?.('aiPhaseTimelineHint') || 'Track the current interpretation stage.',
+        tone: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-100',
+      };
+    }
+
+    if (loading || isRunning || isWaiting) {
+      return {
+        kind: 'running',
+        label: t?.('aiPhaseTimelineRunning') || '流程进行中',
+        hint: t?.('aiPhaseTimelineHint') || 'Track the current interpretation stage.',
+        tone: 'border-sky-500/30 bg-sky-500/10 text-sky-100',
+      };
+    }
+
+    return {
+      kind: 'idle',
+      label: null,
+      hint: t?.('aiPhaseTimelineHint') || 'Track the current interpretation stage.',
+      tone: 'border-white/10 bg-white/5 text-gray-300',
+    };
+  }, [displayedPhases, loading, t]);
+
+  if (!cards || cards.length < 3 || !resolvedReading) return null;
+
+  const orchestrationLabel = getOrchestrationLabel(resolvedOrchestration, language);
+  const sourceLabel = getReadingSourceLabel(resolvedReading.source, language, resolvedReading.providerLabel || '');
+  const isFallback = resolvedReading.source === 'local-fallback';
+  const isStreaming = loading && Boolean(reading);
+  const streamingLabel = timelineState?.kind === 'finalize-sync'
+    ? (t?.('aiStreamingFinalize') || '定稿回传中...')
+    : (t?.('aiStreaming') || t?.('aiRefreshing'));
+  const placeholderLabel = t?.('aiStreamingPlaceholder') || 'Streaming...';
+
+  if (loading && !reading) {
+    return (
+      <div className="mx-auto mt-8 w-full max-w-4xl animate-fadeIn rounded-2xl border border-tarot-gold/20 bg-black/30 p-6 text-left md:p-8">
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <div>
+            <h2 className="font-serif text-2xl text-tarot-gold md:text-3xl">{t?.('interpretationTitle') || labels.summaryTitle}</h2>
+            <p className="mt-2 text-sm text-gray-400">{t?.('aiLoading')}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {loadingDots.map((delay) => (
+              <span key={delay} className={`h-2.5 w-2.5 rounded-full bg-tarot-gold animate-pulse ${delay}`}></span>
+            ))}
+          </div>
+        </div>
+        <PhaseTimeline
+          displayedPhases={displayedPhases}
+          orchestrationLabel={orchestrationLabel}
+          timelineState={timelineState}
+          t={t}
+        />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="h-32 rounded-xl bg-white/5"></div>
+          <div className="h-32 rounded-xl bg-white/5"></div>
+          <div className="h-40 rounded-xl bg-white/5 md:col-span-2"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto mt-8 w-full max-w-4xl animate-fadeIn text-left font-serif text-gray-200">
+      <div className="mb-4 rounded-xl border border-tarot-gold/30 bg-black/40 p-4 backdrop-blur-md md:mb-6 md:p-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 className="text-2xl text-tarot-gold md:text-3xl">{t?.('interpretationTitle') || labels.summaryTitle}</h2>
+            {resolvedReading.question && (
+              <p className="mt-2 text-sm text-gray-300">
+                {t?.('questionPrefix')} {resolvedReading.question}
+              </p>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2 md:justify-end">
+            <span className="rounded-full border border-tarot-gold/30 px-3 py-1 text-xs uppercase tracking-widest text-tarot-gold/80">
+              {t?.('aiSourceLabel')}: {sourceLabel}
+            </span>
+            {orchestrationLabel && (
+              <span className="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-widest text-gray-300">
+                {t?.('aiOrchestrationLabel') || 'Mode'}: {orchestrationLabel}
+              </span>
+            )}
+            {resolvedReading.model && (
+              <span className="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-widest text-gray-300">
+                {resolvedReading.model}
+              </span>
+            )}
+            {isStreaming && (
+              <span className="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-widest text-gray-300">
+                {streamingLabel}
+              </span>
+            )}
+          </div>
+        </div>
+        {isFallback && (
+          <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+            {t?.('aiWarningFallback')}
+          </div>
+        )}
+      </div>
+
+      <PhaseTimeline
+        displayedPhases={displayedPhases}
+        orchestrationLabel={orchestrationLabel}
+        timelineState={timelineState}
+        t={t}
+      />
+
+      <div className="mb-4 rounded-xl border border-tarot-gold/30 bg-black/40 p-4 backdrop-blur-md md:mb-8 md:p-8">
+        <h3 className="mb-6 border-b border-tarot-gold/20 pb-2 text-xl text-tarot-gold">{labels.elementalTitle}</h3>
+        <div className="flex flex-col items-center gap-8 md:flex-row">
+          <div className="flex h-32 w-full items-end justify-around gap-4 md:w-1/2">
+            {resolvedReading.elementDistribution.map((stat) => (
+              <div key={stat.key} className="flex h-full w-12 flex-col items-center justify-end gap-2">
                 <span className="text-xs text-tarot-gold">{stat.percent}%</span>
-                <div className="w-full bg-white/10 rounded-t overflow-hidden relative" style={{ height: '100%' }}>
-                  <motion.div
-                    initial={{ height: 0 }}
-                    animate={{ height: `${stat.percent}%` }}
-                    className={`absolute bottom-0 w-full ${stat.name === 'Fire' ? 'bg-red-500' : stat.name === 'Water' ? 'bg-blue-500' : stat.name === 'Air' ? 'bg-yellow-400' : 'bg-green-500'} opacity-70`}
+                <div className="relative h-full w-full overflow-hidden rounded-t bg-white/10">
+                  <div
+                    className={`absolute bottom-0 w-full ${barColors[stat.key] || 'bg-white/30'} opacity-70 transition-all duration-700`}
+                    style={{ height: `${stat.percent}%` }}
                   />
                 </div>
-                <span className="text-xs text-gray-400">{getLocalized(stat.label)}</span>
+                <span className="text-xs text-gray-400">{stat.label}</span>
               </div>
             ))}
           </div>
-          {/* Dominant Text */}
-          <div className="md:w-1/2 text-center md:text-left">
-            <h3 className="text-sm text-gray-400 uppercase tracking-widest mb-1">{t.dominant}</h3>
-            <div className="text-3xl text-tarot-gold font-bold mb-2">
-              {getLocalized(elements.dominant.label)} {language === 'zh' ? '元素主导' : 'Dominant'}
-            </div>
-            <p className="text-sm text-gray-300 italic opacity-80">
-              {language === 'zh'
-                ? "这意味着在当前局势中，该元素的特质（如行动、情感、思维或物质）将占据主导地位。"
-                : "This signifies that in the current situation, the qualities of this element (Action, Emotion, Thought, or Matter) play a leading role."}
-            </p>
+          <div className="text-center md:w-1/2 md:text-left">
+            <h4 className="mb-1 text-sm uppercase tracking-widest text-gray-400">{labels.dominantTitle}</h4>
+            <div className="mb-2 text-3xl font-bold text-tarot-gold">{resolvedReading.dominantElement.label}</div>
+            <p className="text-sm italic text-gray-300 opacity-80">{resolvedReading.dominantElement.description}</p>
           </div>
         </div>
       </div>
 
-      {/* 2. Star Whispers & Resonance */}
-      <div className="bg-white/5 rounded-xl p-8 mb-8 border-l-4 border-tarot-gold">
-        <h3 className="text-center text-tarot-gold/80 mb-4 tracking-widest text-sm">{t.whisperTitle}</h3>
-        <p className="text-center text-xl italic text-gray-100 mb-8 font-light leading-relaxed">
-          {quote}
-        </p>
-
-        <h3 className="text-tarot-gold font-bold mb-3">{t.resonanceTitle}</h3>
-        <p className="leading-loose text-gray-300">
-          {generateResonance()}
-        </p>
+      <div className="mb-8 rounded-xl border-l-4 border-tarot-gold bg-white/5 p-6 md:p-8">
+        <h3 className="mb-4 text-center text-sm uppercase tracking-widest text-tarot-gold/80">{labels.quoteTitle}</h3>
+        <div className="mb-6 text-center text-xl font-light italic leading-relaxed text-gray-100">
+          {resolvedReading.quote || (isStreaming ? <StreamingPlaceholder text={placeholderLabel} /> : null)}
+        </div>
+        <h3 className="mb-3 font-bold text-tarot-gold">{labels.summaryTitle}</h3>
+        <div className="leading-loose text-gray-300">
+          {resolvedReading.summary || (isStreaming ? <StreamingPlaceholder text={placeholderLabel} /> : null)}
+        </div>
       </div>
 
-      {/* 3. Deep Dive */}
-      <div className="mb-12">
-        <h2 className="text-2xl text-center text-tarot-gold mb-8 tracking-[0.2em]">{t.deepDiveTitle}</h2>
+      <div className="mb-8 md:mb-12">
+        <h3 className="mb-8 text-center text-2xl tracking-[0.2em] text-tarot-gold">{labels.cardsTitle}</h3>
         <div className="space-y-6">
-          {/* Past */}
-          <div className="bg-gradient-to-r from-black/60 to-transparent p-6 rounded-lg border-t border-white/10">
-            <h3 className="text-tarot-gold text-lg mb-2">
-              {t.pastLabel} · {getLocalized(past.name)} · {getPositionLabel(past)}
-            </h3>
-            <p className="text-gray-300 leading-relaxed pl-4 border-l-2 border-white/20">
-              "{getMeaning(past)}"
-              <br /><span className="text-sm opacity-60 mt-2 block">{language === 'zh' ? '这张牌揭示了你根基中存在的能量...' : 'This card reveals the energy existing at your foundation...'}</span>
-            </p>
-          </div>
+          {resolvedReading.perCard.map((item, index) => (
+            <div
+              key={item.slot}
+              className={`rounded-lg p-6 ${index === 1 ? 'border-l-4 border-tarot-gold bg-gradient-to-r from-tarot-gold/20 to-transparent' : 'border-t border-white/10 bg-gradient-to-r from-black/60 to-transparent'}`}
+            >
+              <h4 className="mb-2 text-lg text-tarot-gold">
+                {item.slotLabel} · {item.title} · {item.orientationLabel}
+              </h4>
+              <p className="border-l-2 border-white/20 pl-4 leading-relaxed text-gray-300">
+                “{item.keyword}”
+                <br />
+                <span className="mt-3 block text-sm opacity-80">
+                  {item.message || (isStreaming ? <StreamingPlaceholder text={placeholderLabel} /> : null)}
+                </span>
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
 
-          {/* Present */}
-          <div className="bg-gradient-to-r from-tarot-gold/20 to-transparent p-6 rounded-lg border-l-4 border-tarot-gold">
-            <h3 className="text-tarot-gold text-lg mb-2">
-              {t.presentLabel} · {getLocalized(present.name)} · {getPositionLabel(present)}
-            </h3>
-            <p className="text-gray-200 leading-relaxed pl-4 border-l-2 border-white/20">
-              "{getMeaning(present)}"
-              <br /><span className="text-sm opacity-60 mt-2 block">{language === 'zh' ? '此刻，你正站在一个至关重要的节点...' : 'At this moment, you stand at a crucial junction...'}</span>
-            </p>
+      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-8">
+        <div className="rounded-lg bg-white/5 p-6">
+          <h3 className="mb-3 border-b border-white/10 pb-2 font-bold text-tarot-gold">{labels.adviceTitle}</h3>
+          <div className="space-y-3 leading-relaxed text-gray-300">
+            {resolvedReading.advice.length > 0
+              ? resolvedReading.advice.map((item) => <p key={item}>• {item}</p>)
+              : isStreaming
+                ? <StreamingPlaceholder text={placeholderLabel} />
+                : null}
           </div>
-
-          {/* Future */}
-          <div className="bg-gradient-to-r from-black/60 to-transparent p-6 rounded-lg border-t border-white/10">
-            <h3 className="text-tarot-gold text-lg mb-2">
-              {t.futureLabel} · {getLocalized(future.name)} · {getPositionLabel(future)}
-            </h3>
-            <p className="text-gray-300 leading-relaxed pl-4 border-l-2 border-white/20">
-              "{getMeaning(future)}"
-              <br /><span className="text-sm opacity-60 mt-2 block">{language === 'zh' ? '未来的能量指向...' : 'The future energy points towards...'}</span>
-            </p>
+        </div>
+        <div className="flex flex-col items-center justify-center rounded-lg bg-tarot-gold/10 p-6 text-center">
+          <h3 className="mb-4 text-xs uppercase tracking-widest text-tarot-gold/60">{labels.mantraTitle}</h3>
+          <div className="text-xl font-serif italic text-tarot-gold">
+            {resolvedReading.mantra || (isStreaming ? <StreamingPlaceholder text={placeholderLabel} /> : null)}
           </div>
         </div>
       </div>
 
-      {/* 4. Advice & Mantra */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
-        <div className="bg-white/5 p-6 rounded-lg">
-          <h3 className="text-tarot-gold font-bold mb-3 border-b border-white/10 pb-2">{t.adviceTitle}</h3>
-          <p className="text-gray-300 leading-relaxed">
-            {advice}
-          </p>
-        </div>
-        <div className="bg-tarot-gold/10 p-6 rounded-lg flex flex-col justify-center items-center text-center">
-          <h3 className="text-tarot-gold/60 text-xs tracking-widest mb-4">{t.mantraTitle}</h3>
-          <p className="text-xl text-tarot-gold font-serif italic">
-            {t.mantraText}
-          </p>
+      <div className="mb-6 rounded-xl border border-white/10 bg-white/5 p-6">
+        <h3 className="mb-4 font-bold text-tarot-gold">{labels.followUpsTitle}</h3>
+        <div className="flex flex-wrap gap-3">
+          {resolvedReading.followUps.length > 0
+            ? resolvedReading.followUps.map((item) => (
+              <span key={item} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-gray-200">
+                {item}
+              </span>
+            ))
+            : isStreaming
+              ? <StreamingPlaceholder text={placeholderLabel} />
+              : null}
         </div>
       </div>
 
+      <div className="flex flex-col gap-4 rounded-xl border border-white/10 bg-black/30 p-4 md:flex-row md:items-center md:justify-between md:p-5">
+        <div>
+          <h3 className="mb-2 text-sm uppercase tracking-widest text-tarot-gold">{labels.safetyTitle}</h3>
+          <div className="text-sm leading-relaxed text-gray-300">
+            {resolvedReading.safetyNote || (isStreaming ? <StreamingPlaceholder text={placeholderLabel} /> : null)}
+          </div>
+        </div>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="self-start rounded border border-tarot-gold px-4 py-2 text-tarot-gold transition-colors hover:bg-tarot-gold hover:text-tarot-bg md:self-auto"
+          >
+            {t?.('aiRetry')}
+          </button>
+        )}
+      </div>
     </div>
   );
 };
