@@ -30,15 +30,15 @@ const labelsByLanguage = {
 
 const phaseLabelsByLanguage = {
   en: {
-    draft: 'Draft ministry',
-    review: 'Review ministry',
-    finalize: 'Finalize ministry',
+    draft: 'Card draft',
+    review: 'Reading review',
+    finalize: 'Final reading',
     fallback: 'Fallback',
   },
   zh: {
-    draft: '中书省起草',
-    review: '门下省复核',
-    finalize: '尚书省定稿',
+    draft: '牌意起稿',
+    review: '解读复核',
+    finalize: '结果定稿',
     fallback: '降级回退',
   },
 };
@@ -49,12 +49,14 @@ const phaseStatusLabelsByLanguage = {
     started: 'In Progress',
     completed: 'Completed',
     triggered: 'Triggered',
+    failed: 'Failed',
   },
   zh: {
     pending: '等待中',
     started: '进行中',
     completed: '已完成',
     triggered: '已触发',
+    failed: '失败',
   },
 };
 
@@ -88,6 +90,8 @@ const getPhaseTone = (status) => {
       return 'border-sky-500/30 bg-sky-500/10 text-sky-100';
     case 'triggered':
       return 'border-amber-500/30 bg-amber-500/10 text-amber-100';
+    case 'failed':
+      return 'border-rose-500/30 bg-rose-500/10 text-rose-100';
     default:
       return 'border-white/10 bg-white/5 text-gray-300';
   }
@@ -145,6 +149,11 @@ const PhaseTimeline = ({ displayedPhases, orchestrationLabel, timelineState, t }
                 <div className="text-sm font-medium leading-relaxed">
                   {phase.label}
                 </div>
+                {phase.detail && (
+                  <p className="mt-3 text-xs leading-relaxed opacity-80">
+                    {phase.detail}
+                  </p>
+                )}
               </div>
             );
           })}
@@ -188,13 +197,15 @@ const Interpretation = ({
           ...phase,
           stage,
           status: 'completed',
-          label: phase?.label || phaseLabels[stage],
+          label: phaseLabels[stage] || phase?.label || stage,
         });
       });
     }
 
-    const defaultStages = resolvedOrchestration === 'multi'
-      ? (completedPipelineStages.length > 0 ? completedPipelineStages : pipelineStages)
+    const hasPipelinePhases = pipelineStages.some((stage) => phaseMap.has(stage));
+
+    const defaultStages = resolvedOrchestration === 'multi' || hasPipelinePhases
+      ? pipelineStages
       : [];
 
     const items = defaultStages.map((stage) => {
@@ -204,6 +215,7 @@ const Interpretation = ({
         label: phase?.label || phaseLabels[stage],
         status: phase?.status || 'pending',
         statusLabel: phaseStatusLabels[phase?.status || 'pending'] || phaseStatusLabels.pending,
+        detail: phase?.detail || '',
       };
     });
 
@@ -211,9 +223,10 @@ const Interpretation = ({
       const phase = phaseMap.get('fallback');
       items.push({
         stage: 'fallback',
-        label: phase?.label || phaseLabels.fallback,
+        label: phaseLabels.fallback || phase?.label || 'fallback',
         status: phase?.status || 'triggered',
         statusLabel: phaseStatusLabels[phase?.status || 'triggered'] || phaseStatusLabels.triggered,
+        detail: phase?.detail || '',
       });
     }
 
@@ -225,15 +238,20 @@ const Interpretation = ({
       .sort((left, right) => phaseOrder.indexOf(left.stage) - phaseOrder.indexOf(right.stage))
       .map((phase) => ({
         ...phase,
-        label: phase.label || phaseLabels[phase.stage] || phase.stage,
+        label: phaseLabels[phase.stage] || phase.label || phase.stage,
         statusLabel: phaseStatusLabels[phase.status] || phaseStatusLabels.pending,
+        detail: phase.detail || '',
       }));
   }, [loading, phaseLabels, phaseStatusLabels, phases, resolvedOrchestration, resolvedReading]);
 
   const timelineState = useMemo(() => {
     const activePhases = displayedPhases.filter((phase) => pipelineStages.includes(phase.stage));
-    const hasFallback = displayedPhases.some((phase) => phase.stage === 'fallback');
-    const isComplete = activePhases.length > 0 && activePhases.every((phase) => phase.status === 'completed');
+    const failedPhase = activePhases.find((phase) => phase.status === 'failed');
+    const fallbackPhase = displayedPhases.find((phase) => phase.stage === 'fallback');
+    const hasFallback = Boolean(fallbackPhase);
+    const expectsFullPipeline = resolvedOrchestration === 'multi';
+    const hasFullPipeline = !expectsFullPipeline || activePhases.length === pipelineStages.length;
+    const isComplete = hasFullPipeline && activePhases.length > 0 && activePhases.every((phase) => phase.status === 'completed');
     const isRunning = activePhases.some((phase) => phase.status === 'started');
     const isWaiting = activePhases.some((phase) => phase.status === 'pending');
 
@@ -241,7 +259,7 @@ const Interpretation = ({
       return {
         kind: 'finalize-sync',
         label: t?.('aiPhaseTimelineDone') || '流程已完成',
-        hint: t?.('aiPhaseTimelineFinalizeStreaming') || '三省流程已结束，当前仅在同步最终文本。',
+        hint: t?.('aiPhaseTimelineFinalizeStreaming') || '三段流程已结束，当前仅在同步最终文本。',
         tone: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-100',
       };
     }
@@ -250,8 +268,17 @@ const Interpretation = ({
       return {
         kind: 'fallback',
         label: t?.('aiPhaseTimelineFallback') || '已回退',
-        hint: t?.('aiPhaseTimelineHint') || 'Track the current interpretation stage.',
+        hint: fallbackPhase?.detail || failedPhase?.detail || t?.('aiPhaseTimelineHint') || 'Track the current interpretation stage.',
         tone: 'border-amber-500/30 bg-amber-500/10 text-amber-100',
+      };
+    }
+
+    if (failedPhase) {
+      return {
+        kind: 'failed',
+        label: t?.('aiPhaseTimelineFailed') || '阶段失败',
+        hint: failedPhase.detail || t?.('aiPhaseTimelineHint') || 'Track the current interpretation stage.',
+        tone: 'border-rose-500/30 bg-rose-500/10 text-rose-100',
       };
     }
 
@@ -279,13 +306,16 @@ const Interpretation = ({
       hint: t?.('aiPhaseTimelineHint') || 'Track the current interpretation stage.',
       tone: 'border-white/10 bg-white/5 text-gray-300',
     };
-  }, [displayedPhases, loading, t]);
+  }, [displayedPhases, loading, resolvedOrchestration, t]);
 
   if (!cards || cards.length < 3 || !resolvedReading) return null;
 
   const orchestrationLabel = getOrchestrationLabel(resolvedOrchestration, language);
   const sourceLabel = getReadingSourceLabel(resolvedReading.source, language, resolvedReading.providerLabel || '');
-  const isFallback = resolvedReading.source === 'local-fallback';
+  const fallbackPhase = displayedPhases.find((phase) => phase.stage === 'fallback') || null;
+  const fallbackDetail = typeof fallbackPhase?.detail === 'string' ? fallbackPhase.detail.trim() : '';
+  const isLocalFallback = resolvedReading.source === 'local-fallback';
+  const isServerFallback = resolvedReading.source === 'mock-server' || Boolean(fallbackPhase);
   const isStreaming = loading && Boolean(reading);
   const streamingLabel = timelineState?.kind === 'finalize-sync'
     ? (t?.('aiStreamingFinalize') || '定稿回传中...')
@@ -354,9 +384,14 @@ const Interpretation = ({
             )}
           </div>
         </div>
-        {isFallback && (
+        {(isLocalFallback || isServerFallback) && (
           <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-            {t?.('aiWarningFallback')}
+            <p>{isLocalFallback ? t?.('aiWarningFallback') : (t?.('aiWarningServerFallback') || t?.('aiWarningFallback'))}</p>
+            {fallbackDetail && (
+              <p className="mt-2 text-xs text-amber-100/80">
+                {t?.('aiFallbackReasonLabel') || '原因'}: {fallbackDetail}
+              </p>
+            )}
           </div>
         )}
       </div>

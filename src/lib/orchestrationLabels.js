@@ -1,11 +1,11 @@
 export const orchestrationLabels = {
   en: {
-    multi: 'Three-agent',
+    multi: 'Three-stage',
     single: 'Single agent',
     mock: 'Mock fallback',
   },
   zh: {
-    multi: '三省协作',
+    multi: '三段协作',
     single: '单代理',
     mock: '模拟回退',
   },

@@ -81,10 +81,16 @@ export const mergeReadingWithBase = (baseReading, partialReading = {}, metadata 
     quote: typeof quote === 'string' && quote.trim()
       ? quote
       : baseReading.quote,
-    perCard: baseReading.perCard.map((cardReading) => ({
-      ...cardReading,
-      ...(perCardOverrides.get(cardReading.slot) || {}),
-    })),
+    perCard: baseReading.perCard.map((cardReading) => {
+      const override = perCardOverrides.get(cardReading.slot);
+      if (!override) return cardReading;
+      const { message, ...restOverride } = override;
+      return {
+        ...cardReading,
+        ...restOverride,
+        ...(typeof message === 'string' && message.trim() ? { message } : {}),
+      };
+    }),
     advice: normalizeStringArray(advice, baseReading.advice),
     followUps: normalizeStringArray(followUps, baseReading.followUps),
     mantra: typeof mantra === 'string' && mantra.trim()

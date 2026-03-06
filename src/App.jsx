@@ -159,15 +159,22 @@ function App() {
         return current;
       }
 
-      const completedPhases = sortPhases(
-        finalReading.agentPipeline.map((stage) => ({
-          stage,
-          status: 'completed',
-        }))
+      const phaseMap = new Map(
+        (current || [])
+          .filter((phase) => phase?.stage)
+          .map((phase) => [phase.stage, phase])
       );
 
-      const fallbackPhase = current.find((phase) => phase.stage === 'fallback');
-      return fallbackPhase ? sortPhases([...completedPhases, fallbackPhase]) : completedPhases;
+      finalReading.agentPipeline.forEach((stage) => {
+        const existingPhase = phaseMap.get(stage);
+        phaseMap.set(stage, {
+          ...existingPhase,
+          stage,
+          status: existingPhase?.status === 'failed' ? 'failed' : 'completed',
+        });
+      });
+
+      return sortPhases([...phaseMap.values()]);
     });
 
     upsertHistoryRecord(createHistoryRecord({

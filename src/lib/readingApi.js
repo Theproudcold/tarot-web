@@ -3,7 +3,7 @@ import { buildReading, serializeCards } from './tarotReading.js';
 import { serializeAiSettings, serializeOrchestrationMode } from './aiSettings.js';
 
 const DEFAULT_TIMEOUT_MS = 15000;
-const DEFAULT_STREAM_TIMEOUT_MS = 60000;
+const DEFAULT_STREAM_TIMEOUT_MS = Number(import.meta.env.VITE_STREAM_TIMEOUT_MS || 180000);
 
 const trimTrailingSlash = (value = '') => value.replace(/\/$/, '');
 
@@ -14,15 +14,47 @@ const buildUrl = (path) => {
   return `${baseUrl}${path}`;
 };
 
-const withTimeout = async (request, timeoutMs = DEFAULT_TIMEOUT_MS) => {
+const withTimeout = async (request, timeoutMs = DEFAULT_TIMEOUT_MS, timeoutMessage = `Request timed out after ${timeoutMs}ms`) => {
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     return await request(controller.signal);
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error(timeoutMessage);
+    }
+    throw error;
   } finally {
     window.clearTimeout(timeoutId);
   }
+};
+
+const createStreamTimeoutController = (
+  timeoutMs = DEFAULT_STREAM_TIMEOUT_MS,
+  timeoutMessage = `Streaming request timed out after ${timeoutMs}ms`
+) => {
+  const controller = new AbortController();
+  let timeoutId = null;
+
+  const reset = () => {
+    window.clearTimeout(timeoutId);
+    timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+  };
+
+  const clear = () => {
+    window.clearTimeout(timeoutId);
+    timeoutId = null;
+  };
+
+  reset();
+
+  return {
+    signal: controller.signal,
+    timeoutMessage,
+    reset,
+    clear,
+  };
 };
 
 const requestJson = async (path, payload) => withTimeout(async (signal) => {
@@ -69,36 +101,47 @@ const parseSseEvent = (rawEvent) => {
   };
 };
 
-const consumeEventStream = async (stream, onEvent) => {
+const consumeEventStream = async (stream, onEvent, timeoutController = null) => {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
 
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
+  try {
+    while (true) {
+      timeoutController?.reset();
+      const { value, done } = await reader.read();
+      if (done) break;
 
-    buffer += decoder.decode(value, { stream: true });
-    const chunks = buffer.split('\n\n');
-    buffer = chunks.pop() || '';
+      timeoutController?.reset();
+      buffer += decoder.decode(value, { stream: true });
+      const chunks = buffer.split('\n\n');
+      buffer = chunks.pop() || '';
 
-    for (const chunk of chunks) {
-      const parsed = parseSseEvent(chunk.trim());
+      for (const chunk of chunks) {
+        const parsed = parseSseEvent(chunk.trim());
+        if (parsed) {
+          await onEvent(parsed);
+        }
+      }
+    }
+
+    const trailing = buffer.trim();
+    if (trailing) {
+      const parsed = parseSseEvent(trailing);
       if (parsed) {
         await onEvent(parsed);
       }
     }
-  }
+  } finally {
+    timeoutController?.clear();
 
-  const trailing = buffer.trim();
-  if (trailing) {
-    const parsed = parseSseEvent(trailing);
-    if (parsed) {
-      await onEvent(parsed);
+    try {
+      reader.releaseLock();
+    } catch {
+      // noop
     }
   }
 };
-
 
 export const getAiRuntimeInfo = async () => withTimeout(async (signal) => {
   const response = await fetch(buildUrl('/health'), {
@@ -131,93 +174,100 @@ export const requestReadingStream = async ({ cards, language, question, aiConfig
   const fallback = buildReading(cards, { language, question, source: 'local-fallback' });
   const serializedAiConfig = serializeAiSettings(aiConfig);
   const orchestration = serializeOrchestrationMode(aiConfig);
+  const timeoutController = createStreamTimeoutController();
 
   try {
-    return withTimeout(async (signal) => {
-      const response = await fetch(buildUrl('/api/reading/stream'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'text/event-stream',
-        },
-        body: JSON.stringify({
+    const response = await fetch(buildUrl('/api/reading/stream'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+      },
+      body: JSON.stringify({
+        language,
+        question,
+        cards: serializeCards(cards),
+        ...(serializedAiConfig ? { aiConfig: serializedAiConfig } : {}),
+        ...(orchestration ? { orchestration } : {}),
+      }),
+      signal: timeoutController.signal,
+    });
+
+    if (!response.ok || !response.body) {
+      const errorText = await response.text();
+      throw new Error(errorText || `Request failed with status ${response.status}`);
+    }
+
+    let finalReading = null;
+
+    await consumeEventStream(response.body, async ({ event, data }) => {
+      timeoutController.reset();
+
+      if (event === 'meta') {
+        if (onMeta) {
+          await onMeta(data);
+        }
+        return;
+      }
+
+      if (event === 'phase') {
+        if (onPhase) {
+          await onPhase(data);
+        }
+        return;
+      }
+
+      if (event === 'partial') {
+        const partialReading = normalizeStreamingReadingResult(data.reading, cards, {
           language,
           question,
-          cards: serializeCards(cards),
-          ...(serializedAiConfig ? { aiConfig: serializedAiConfig } : {}),
-          ...(orchestration ? { orchestration } : {}),
-        }),
-        signal,
-      });
+          source: data.reading?.source || 'api',
+          model: data.reading?.model || null,
+          createdAt: data.reading?.createdAt,
+        });
 
-      if (!response.ok || !response.body) {
-        const errorText = await response.text();
-        throw new Error(errorText || `Request failed with status ${response.status}`);
+        if (partialReading && onPartial) {
+          await onPartial(partialReading, { stage: data.stage || null });
+        }
+        return;
       }
 
-      let finalReading = null;
-
-      await consumeEventStream(response.body, async ({ event, data }) => {
-        if (event === 'meta') {
-          if (onMeta) {
-            onMeta(data);
-          }
-          return;
-        }
-
-        if (event === 'phase') {
-          if (onPhase) {
-            onPhase(data);
-          }
-          return;
-        }
-
-        if (event === 'partial') {
-          const partialReading = normalizeStreamingReadingResult(data.reading, cards, {
-            language,
-            question,
-            source: data.reading?.source || 'api',
-            model: data.reading?.model || null,
-            createdAt: data.reading?.createdAt,
-          });
-
-          if (partialReading && onPartial) {
-            onPartial(partialReading, { stage: data.stage || null });
-          }
-          return;
-        }
-
-        if (event === 'complete') {
-          finalReading = normalizeReadingResult(data.reading, cards, {
-            language,
-            question,
-            source: data.reading?.source || 'api',
-            model: data.reading?.model || null,
-            createdAt: data.reading?.createdAt,
-          });
-          return;
-        }
-
-        if (event === 'error') {
-          throw new Error(data.error || 'Streaming request failed');
-        }
-      });
-
-      if (!finalReading) {
-        throw new Error('Streaming response ended before completion');
+      if (event === 'complete') {
+        finalReading = normalizeReadingResult(data.reading, cards, {
+          language,
+          question,
+          source: data.reading?.source || 'api',
+          model: data.reading?.model || null,
+          createdAt: data.reading?.createdAt,
+        });
+        return;
       }
 
-      return {
-        reading: finalReading,
-        usedFallback: false,
-      };
-    }, DEFAULT_STREAM_TIMEOUT_MS);
+      if (event === 'error') {
+        throw new Error(data.error || 'Streaming request failed');
+      }
+    }, timeoutController);
+
+    if (!finalReading) {
+      throw new Error('Streaming response ended before completion');
+    }
+
+    return {
+      reading: finalReading,
+      usedFallback: false,
+    };
   } catch (error) {
-    console.warn('Falling back to local reading:', error);
+    const normalizedError = error?.name === 'AbortError'
+      ? new Error(timeoutController.timeoutMessage)
+      : error;
+
+    console.warn('Falling back to local reading:', normalizedError);
     return {
       reading: fallback,
       usedFallback: true,
     };
+  } finally {
+    timeoutController.clear();
   }
 };
 
