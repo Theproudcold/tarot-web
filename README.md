@@ -1,136 +1,327 @@
-# Mystic Tarot (神秘塔罗)
+# Mystic Tarot · 神秘塔罗
 
-A modern Tarot reading application built with React and Vite, with streaming AI interpretations and a lightweight multi-agent backend.
+> 在线体验：`https://tarot.hypoy.cn`  
+> 中文文档 / [English README](./README.en.md)
 
-## Features
+一个基于 `React` + `Vite` 的现代塔罗应用，支持中英双语牌义、结构化 AI 解读、网页内 AI 配置，以及带有实时 `SSE` 进度反馈的轻量多 Agent 后端。
 
-- Full 78-card deck with bilingual meanings.
-- 3-card spread with structured interpretation output.
-- Streaming reading flow with SSE for progressively rendered interpretations.
-- In-page AI settings for OpenAI-compatible and third-party endpoints.
-- Three-stage AI orchestration inspired by the classical `三省` model.
-- Reading history that persists cards, questions, and structured interpretations.
-- Gallery and detailed card modal.
+## 界面预览
 
-## Stack
+![Mystic Tarot 全局预览](./docs/image.webp)
 
-- Frontend: React 19, Vite
-- Styling: Tailwind CSS v4, custom CSS
-- Animation: Framer Motion
-- AI API: lightweight Node server using the OpenAI Responses API, OpenAI-compatible chat completions, or a local mock provider
+> 这张总览图展示了首页抽牌、牌阵解读、右侧解读引擎配置、全牌图鉴、历史记录与右下角运行状态入口的整体界面风格。
 
-## Development
+## 项目概览
 
-1. Install dependencies:
+神秘塔罗不是“随机生成一段神秘文案”的玩具，而是尽量把以下几件事做清楚：
+
+- 前端支持抽牌、牌阵展示、历史记录、双语切换。
+- 后端会把前端上传的卡片 `id` 补全为完整牌义上下文，再交给 AI。
+- 支持在网页里直接配置 `OpenAI` 官方接口或任意 `OpenAI-compatible` 第三方站点。
+- 支持 `single` 单代理模式和 `multi` 三段协作模式。
+- 解读过程通过 `SSE` 实时推送 `meta / phase / partial / complete / error` 事件。
+- 当远端模型失败、超时或过载时，会明确显示失败阶段和回退原因，而不是“假装流程正常完成”。
+
+## 功能亮点
+
+- 完整 `78` 张塔罗牌数据，支持中文 / 英文展示。
+- 三张时间线牌阵：`过去 / 现在 / 未来`。
+- 结构化解读输出：`summary / quote / perCard / advice / followUps / mantra / safetyNote`。
+- 网页内 AI 配置：`Base URL / API Key / Model / 提供方显示名 / 编排模式`。
+- 兼容第三方 OpenAI 站点，可自定义来源显示名。
+- 三段协作编排：`牌意起稿 / 解读复核 / 结果定稿`。
+- 实时进度条与阶段日志，不再依赖前端猜测流程。
+- 支持本地历史记录与缩略预览。
+- 当 AI 不可用时自动回退到本地或服务端兜底结果。
+
+## 技术栈
+
+- 前端：`React 19`、`Vite 5`
+- 样式：`Tailwind CSS v4`
+- 动画：`Framer Motion`
+- 后端：原生 `Node.js http server`
+- AI 协议：`OpenAI Responses API`、`OpenAI-compatible chat/completions`
+- 实时传输：`SSE (text/event-stream)`
+
+## 快速开始
+
+1. 安装依赖：
 
    ```bash
    npm install
    ```
 
-2. Run the frontend:
+2. 启动前端：
 
    ```bash
    npm run dev
    ```
 
-3. Run the AI API locally in another terminal:
+3. 另开一个终端启动本地 API：
 
    ```bash
    npm run dev:api
    ```
 
-4. Build for production:
+4. 打开浏览器：
+
+   ```text
+   http://localhost:5173
+   ```
+
+5. 构建生产包：
 
    ```bash
    npm run build
    ```
 
-## AI API modes
+## 环境变量
 
-- Without `OPENAI_API_KEY`, `server/index.js` serves a deterministic mock reading.
-- With `OPENAI_API_KEY`, the server uses the official OpenAI `Responses API` by default, and can switch to OpenAI-compatible `chat/completions` when you supply a custom base URL.
-- You can configure `Base URL + API Key + Model` directly from the Reading page for OpenAI-compatible third-party providers.
-- You can also choose `single` or `multi` orchestration from the web settings panel; leaving it blank follows the server default.
-- `AI_ORCHESTRATION=multi` enables the three-stage pipeline by default; set `AI_ORCHESTRATION=single` when you want lower latency or lower token usage.
-- The streaming endpoint `/api/reading/stream` now emits `meta`, `phase`, `partial`, `complete`, and `error` events.
-- If the frontend cannot reach `/api/reading`, it falls back to a local on-device interpretation so the UI still works on static hosting.
+项目默认读取根目录的环境变量；示例可参考 `.env.example`。
 
-Suggested environment variables:
+| 变量名 | 默认值 | 说明 |
+| --- | --- | --- |
+| `OPENAI_API_KEY` | 空 | 服务端默认使用的 API Key |
+| `OPENAI_MODEL` | `gpt-5-mini` | 服务端默认模型 |
+| `OPENAI_BASE_URL` | `https://api.openai.com/v1` | 官方或兼容接口基地址 |
+| `AI_PROVIDER` | `auto` | `auto / openai / mock` |
+| `AI_ORCHESTRATION` | `multi` | 默认编排模式：`multi / single` |
+| `PORT` | `8787` | 本地 API 端口 |
+| `CORS_ORIGIN` | `http://localhost:5173` | 允许访问 API 的来源 |
+| `VITE_API_BASE_URL` | 空 | 前端单独部署时可指定 API 地址 |
+| `OPENAI_REQUEST_TIMEOUT_MS` | `90000` | 服务端普通 AI 请求超时 |
+| `OPENAI_STREAM_TIMEOUT_MS` | `180000` | 服务端流式 AI 请求超时 |
+| `VITE_STREAM_TIMEOUT_MS` | `180000` | 前端等待 SSE 的超时 |
 
-```bash
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-5-mini
-OPENAI_BASE_URL=https://api.openai.com/v1
-AI_PROVIDER=auto
-AI_ORCHESTRATION=multi
-PORT=8787
-CORS_ORIGIN=http://localhost:5173
-VITE_API_BASE_URL=
+## 网页内 AI 配置
+
+阅读页右侧的 AI 配置面板支持以下能力：
+
+- 启用或关闭“网页内 AI 配置”。
+- 填写 `Base URL / API Key / Model`，适配第三方兼容站点。
+- 设置“提供方显示名”，例如：`DeepSeek`、`OpenRouter`、`我的接口`。
+- 单独选择当前浏览器的编排模式：`single` 或 `multi`。
+- 配置只保存在当前浏览器的 `localStorage` 中，不会写入仓库或服务器。
+
+优先级如下：
+
+1. 网页内用户配置
+2. 服务端环境变量
+3. 无可用远端配置时回退到 `mock`
+
+## 运行模式
+
+### `mock`
+
+当没有可用 `OPENAI_API_KEY`，或服务端被强制设为 `AI_PROVIDER=mock` 时：
+
+- 返回确定性的服务端模拟解读。
+- `orchestration` 会标记为 `mock`。
+- 不会伪装成三段流程。
+
+### `single`
+
+单代理模式会直接生成一份完整结构化解读：
+
+- 延迟更低
+- token 消耗更少
+- 没有三阶段审稿链路
+
+### `multi`
+
+三段协作模式由三个独立 agent 完成：
+
+- `DraftAgent`：牌意起稿
+- `ReviewAgent`：解读复核
+- `FinalizeAgent`：结果定稿
+
+## 真实事件流（SSE）
+
+流式接口为：
+
+```text
+POST /api/reading/stream
 ```
 
-## Multi-agent architecture
+会向前端推送以下事件：
 
-The backend now uses a lightweight orchestration shape inspired by the `edict` project, but trimmed down for this Tarot use case: borrow the layering idea, keep the runtime simple.
+- `meta`：本次实际 provider 与 orchestration
+- `phase`：阶段状态变化
+- `partial`：阶段中的部分内容快照
+- `complete`：最终完整结果
+- `error`：流式接口错误
 
-- `中书省 / DraftAgent`: creates the first structured interpretation draft.
-- `门下省 / ReviewAgent`: audits grounding, tone, consistency, and revision needs.
-- `尚书省 / FinalizeAgent`: merges draft + review into the final user-facing reading.
-- `Mock provider`: remains the final fallback when the remote AI call fails.
+### `multi` 模式下的真实顺序
+
+正常情况下，事件顺序是：
+
+```text
+meta
+phase draft:started
+phase draft:completed
+partial stage=draft
+phase review:started
+phase review:completed
+partial stage=review
+phase finalize:started
+partial stage=finalize ... (多次)
+phase finalize:completed
+complete
+```
+
+关键说明：
+
+- `draft` 和 `review` 会推送“快照”，它们是阶段性成果，不代表最终定稿。
+- `finalize` 优先走 **provider 原生流式**，也就是结果定稿阶段会真实持续输出，而不是事后假拆帧。
+- 如果第三方站点不支持原生流式，系统会退回到 buffered finalize，再继续完成流程。
+
+## 失败与回退机制
+
+当远端模型失败、CPU 过载、无响应或超时时：
+
+- 后端会发送明确的失败阶段，例如：
+  - `draft failed`
+  - `review failed`
+  - `finalize failed`
+- 前端时间线会展示失败节点与原因。
+- 如果 `multi` 流程失败，会先尝试回退到单代理。
+- 如果单代理也失败，最终回退到 `mock`。
+
+终端日志大致会输出：
+
+```text
+[reading phase] draft:completed (custom-openai / gpt-5.2)
+[reading phase] review:started
+[reading phase] finalize:failed — system cpu overloaded
+[reading phase] fallback:triggered — system cpu overloaded
+```
+
+## 架构图
 
 ```mermaid
 flowchart TD
-  UI[React Reading UI] --> SETTINGS[AI Settings Panel]
+  UI[React 阅读界面] --> SETTINGS[网页内 AI 配置]
   UI --> STREAM[/api/reading/stream]
   UI --> JSON[/api/reading]
 
-  SETTINGS --> JSON
   SETTINGS --> STREAM
+  SETTINGS --> JSON
 
-  STREAM --> HYDRATE[Card Hydrator\nserver/index.js]
-  JSON --> HYDRATE
-  HYDRATE --> ORCH[Reading Orchestrator\nserver/ai/orchestrator.js]
+  STREAM --> API[server/index.js]
+  JSON --> API
+  API --> HYDRATE[卡片补全 / 请求校验]
+  HYDRATE --> ORCH[server/ai/orchestrator.js]
 
-  ORCH --> MODE{AI_ORCHESTRATION}
-  MODE -->|multi| DRAFT[中书省\nDraftAgent]
-  DRAFT --> REVIEW[门下省\nReviewAgent]
-  REVIEW --> FINALIZE[尚书省\nFinalizeAgent]
-  FINALIZE --> MERGE[Reading Contract Merge\nsrc/lib/readingContract.js]
+  ORCH --> MODE{provider / orchestration}
 
+  MODE -->|mock| MOCK[Mock Provider]
   MODE -->|single| SINGLE[Single OpenAI Reading]
-  SINGLE --> MERGE
+  MODE -->|multi| DRAFT[DraftAgent 牌意起稿]
 
-  ORCH -->|provider/mock fallback| MOCK[Mock Provider]
+  DRAFT --> REVIEW[ReviewAgent 解读复核]
+  REVIEW --> FINALIZE[FinalizeAgent 结果定稿]
+  FINALIZE --> FINAL_STREAM[原生 finalize 流式输出]
+
+  FINALIZE -.失败.- FALLBACK_SINGLE[回退到单代理]
+  FALLBACK_SINGLE -.失败.- FALLBACK_MOCK[回退到 Mock]
+
+  SINGLE --> MERGE[Reading Contract Merge]
   MOCK --> MERGE
+  FINAL_STREAM --> MERGE
+  FALLBACK_SINGLE --> MERGE
+  FALLBACK_MOCK --> MERGE
 
-  MERGE --> SSE[Phase + Partial SSE Frames]
-  MERGE --> RESULT[Structured Reading JSON]
+  MERGE --> SSE[SSE: meta / phase / partial / complete]
   SSE --> UI
-  RESULT --> UI
 ```
 
-## Project structure
+## 时序图
 
-- `src/components`: visual components and reading UI
-- `src/data`: tarot deck data
-- `src/lib`: shared reading contract, fallback generation, storage, and API helpers
-- `server/ai/agents`: `DraftAgent`, `ReviewAgent`, and `FinalizeAgent`
-- `server/ai/providers`: provider-specific integrations such as OpenAI-compatible APIs
-- `server/ai/orchestrator.js`: top-level provider and orchestration switching
-- `server/index.js`: HTTP API, request validation, card hydration, and SSE delivery
+```mermaid
+sequenceDiagram
+  participant Browser as 浏览器
+  participant API as Node API
+  participant Orch as Orchestrator
+  participant Draft as DraftAgent
+  participant Review as ReviewAgent
+  participant Finalize as FinalizeAgent
 
-## Orchestration notes
+  Browser->>API: POST /api/reading/stream
+  API-->>Browser: meta
+  API->>Orch: runReadingOrchestrator
 
-- Cards are still submitted from the client as lightweight refs, but the server hydrates them into full card context before any agent sees them.
-- Each agent receives slot, localized card name, upright/reversed orientation, element, meaning, question, and elemental distribution.
-- When multi-agent execution fails, the orchestrator falls back to the single-agent OpenAI path before dropping to the local mock provider.
-- `phase` SSE events make the agent pipeline observable without requiring frontend coupling.
+  Orch->>Draft: 起稿
+  API-->>Browser: phase draft:started
+  Draft-->>Orch: structured draft
+  API-->>Browser: phase draft:completed
+  API-->>Browser: partial stage=draft
 
-## Next steps
+  Orch->>Review: 复核
+  API-->>Browser: phase review:started
+  Review-->>Orch: revision plan
+  API-->>Browser: phase review:completed
+  API-->>Browser: partial stage=review
 
-- Surface `phase` events in the UI as a visible “thinking / reviewing / finalizing” timeline.
-- Add per-agent diagnostics in development mode for prompt tuning.
-- Move history from local storage to a user-aware backend store when accounts are added.
+  Orch->>Finalize: 定稿
+  API-->>Browser: phase finalize:started
+  Finalize-->>Browser: provider-native partials
+  API-->>Browser: partial stage=finalize
+  API-->>Browser: phase finalize:completed
+  API-->>Browser: complete
+```
 
-## License
+## 项目结构
 
-MIT
+```text
+src/
+  components/        前端界面组件
+  data/              塔罗牌数据
+  lib/               前端逻辑、契约、存储、API 封装
+  locales/           中英文本
+server/
+  ai/                provider、agents、orchestrator、streaming
+  index.js           Node API 入口
+```
+
+## 常见问题
+
+### 1. 连接测试成功，但正式解读失败
+
+常见原因：
+
+- 第三方兼容站点只兼容基础请求，不完全兼容结构化输出或流式输出。
+- 模型临时过载，例如 `system_cpu_overloaded`。
+- 流式链路超时，或第三方对长连接支持不稳定。
+
+建议：
+
+- 先切换到 `single` 模式验证基础可用性。
+- 确认 `Base URL` 是否应指向 `/v1`、`/responses` 或 `/chat/completions`。
+- 适当提高 `.env.example` 中的超时参数。
+
+### 2. 为什么看到 `partial`，但内容还不是最终版？
+
+因为：
+
+- `draft` 和 `review` 的 `partial` 是阶段快照；
+- 只有 `finalize` 阶段和最终 `complete` 才对应真正面向用户的定稿结果。
+
+### 3. 为什么最终会回退到 `mock` 或本地解读？
+
+这是故意设计的兜底策略，用来保证页面不会卡死：
+
+- `multi` 失败 → 先回退 `single`
+- `single` 再失败 → 回退 `mock`
+- 前端流式异常 → 最后回退 `local-fallback`
+
+## 开源协议
+
+本项目当前采用 `Apache-2.0` 协议，详见 `LICENSE`。如需保留归属说明，请同时查看 `NOTICE`。
+
+## English
+
+英文文档已拆分到 `README.en.md`：
+
+- [Open English README](./README.en.md)
+- [查看 LICENSE](./LICENSE)
+- [查看 NOTICE](./NOTICE)
