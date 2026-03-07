@@ -93,6 +93,8 @@ export const en = {
   galleryCompareNeedMore: 'Choose at least two cards for a more useful comparison.',
   galleryDensityComfortable: 'Comfortable',
   galleryDensityCompact: 'Compact',
+  galleryFiltersOpen: 'Show Filters',
+  galleryFiltersClose: 'Hide Filters',
   galleryClearFilters: 'Clear filters',
   galleryResultsPrefix: 'Results',
   galleryLoadMore: 'Load more',

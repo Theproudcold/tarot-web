@@ -93,6 +93,8 @@ export const zh = {
   galleryCompareNeedMore: '至少选择两张牌后更适合对比。',
   galleryDensityComfortable: '舒适视图',
   galleryDensityCompact: '紧凑视图',
+  galleryFiltersOpen: '展开筛选',
+  galleryFiltersClose: '收起筛选',
   galleryClearFilters: '清空筛选',
   galleryResultsPrefix: '筛选结果',
   galleryLoadMore: '加载更多',

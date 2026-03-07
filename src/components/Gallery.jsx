@@ -74,6 +74,7 @@ const Gallery = ({ cards, language = 'en', t = (key) => key }) => {
     return Array.isArray(storedValue) ? storedValue.map(Number).filter(Number.isFinite) : [];
   });
   const [compareCardIds, setCompareCardIds] = useState([]);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_COUNT);
 
   const getLocalized = useCallback((value) => {
@@ -266,6 +267,14 @@ const Gallery = ({ cards, language = 'en', t = (key) => key }) => {
   const selectedCard = selectedCardId ? cardMap.get(selectedCardId) ?? null : null;
   const visibleCards = filteredCards.slice(0, visibleCount);
   const hasActiveFilters = Boolean(normalizedQuery) || arcanaFilter !== 'all' || suiteFilter !== 'all' || elementFilter !== 'all' || favoritesOnly;
+  const activeFilterCount = [
+    Boolean(normalizedQuery),
+    arcanaFilter !== 'all',
+    suiteFilter !== 'all',
+    elementFilter !== 'all',
+    favoritesOnly,
+    sortBy !== 'arcana',
+  ].filter(Boolean).length;
 
   const densityClass = density === 'compact'
     ? 'w-[128px] h-[218px] md:w-[144px] md:h-[245px]'
@@ -305,6 +314,7 @@ const Gallery = ({ cards, language = 'en', t = (key) => key }) => {
     setElementFilter('all');
     setSortBy('arcana');
     setFavoritesOnly(false);
+    setMobileFiltersOpen(false);
   };
 
   const scrollToSection = (sectionKey) => {
@@ -440,12 +450,32 @@ const Gallery = ({ cards, language = 'en', t = (key) => key }) => {
           >
             {t('galleryFavoritesOnly')}
           </button>
+          <button
+            type="button"
+            onClick={() => setMobileFiltersOpen((current) => !current)}
+            className="ml-auto rounded-full border border-white/10 bg-black/25 px-4 py-2 text-sm text-gray-200 transition-colors hover:border-tarot-gold/40 hover:text-tarot-gold md:hidden"
+          >
+            {mobileFiltersOpen ? t('galleryFiltersClose') : t('galleryFiltersOpen')}
+            <span className="ml-2 rounded-full bg-tarot-gold/15 px-2 py-0.5 text-xs text-tarot-gold">{activeFilterCount}</span>
+          </button>
           <span className="ml-auto hidden text-sm text-gray-400 lg:block">
             {displayMode === 'grouped' ? t('galleryGroupedHint') : t('galleryGridHint')}
           </span>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr),repeat(4,minmax(0,1fr))]">
+        <div className="mb-4 flex flex-wrap items-center gap-2 md:hidden">
+          <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-xs text-gray-300">
+            {t('galleryResultsPrefix')} {filteredCards.length}
+          </span>
+          <span className="rounded-full border border-amber-300/20 bg-amber-400/10 px-3 py-1.5 text-xs text-amber-100">
+            {t('galleryFavoritesTitle')} {favoriteCardIds.length}
+          </span>
+          <span className="rounded-full border border-sky-300/20 bg-sky-400/10 px-3 py-1.5 text-xs text-sky-100">
+            {t('galleryCompareTitle')} {compareCards.length}/{COMPARE_CARD_LIMIT}
+          </span>
+        </div>
+
+        <div className={`${mobileFiltersOpen ? 'grid' : 'hidden'} gap-3 md:grid xl:grid-cols-[minmax(0,1.4fr),repeat(4,minmax(0,1fr))] md:grid-cols-2`}>
           <label className="flex flex-col gap-2">
             <span className="text-xs uppercase tracking-[0.25em] text-gray-500">{t('gallerySearchLabel')}</span>
             <input
@@ -523,7 +553,7 @@ const Gallery = ({ cards, language = 'en', t = (key) => key }) => {
           </label>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+        <div className={`${mobileFiltersOpen ? 'mt-4 flex' : 'hidden'} flex-wrap items-center gap-2 md:mt-4 md:flex`}>
           {hasActiveFilters && (
             <button
               type="button"
