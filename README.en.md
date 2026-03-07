@@ -79,10 +79,34 @@ See `.env.example` for the complete template.
 | `AI_ORCHESTRATION` | `multi` | Default orchestration mode |
 | `PORT` | `8787` | Local API port |
 | `CORS_ORIGIN` | `http://localhost:5173` | Allowed browser origin |
-| `VITE_API_BASE_URL` | empty | Optional API URL for separate frontend deployment |
+| `VITE_API_BASE_URL` | empty | Optional API URL for separate frontend deployment; leave empty to use same-origin `/api` |
+| `VITE_BASE_PATH` | `/` | Frontend base path; suitable for root-domain deployment by default |
 | `OPENAI_REQUEST_TIMEOUT_MS` | `90000` | Server-side non-stream timeout |
 | `OPENAI_STREAM_TIMEOUT_MS` | `180000` | Server-side streaming timeout |
 | `VITE_STREAM_TIMEOUT_MS` | `180000` | Frontend SSE timeout |
+
+## Production Deployment
+
+The app now supports **single-server deployment**: once `dist` exists, `server/index.js` serves both the frontend build and the `/api` endpoints from the same process.
+
+Minimal production flow:
+
+```bash
+npm install
+npm run build
+npm run start
+```
+
+By default:
+
+- frontend and API share the same host and port
+- no separate static hosting is required
+- `VITE_API_BASE_URL` can stay empty
+
+If you still deploy frontend and backend separately:
+
+- set `VITE_API_BASE_URL` when building the frontend
+- set `CORS_ORIGIN` on the backend; it now supports a single origin, multiple comma-separated origins, or `*`
 
 ## Browser AI Settings
 

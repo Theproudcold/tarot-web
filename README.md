@@ -88,10 +88,34 @@
 | `AI_ORCHESTRATION` | `multi` | 默认编排模式：`multi / single` |
 | `PORT` | `8787` | 本地 API 端口 |
 | `CORS_ORIGIN` | `http://localhost:5173` | 允许访问 API 的来源 |
-| `VITE_API_BASE_URL` | 空 | 前端单独部署时可指定 API 地址 |
+| `VITE_API_BASE_URL` | 空 | 前端单独部署时可指定 API 地址；留空时默认走同源 `/api` |
+| `VITE_BASE_PATH` | `/` | 前端部署根路径；默认适合根域名部署 |
 | `OPENAI_REQUEST_TIMEOUT_MS` | `90000` | 服务端普通 AI 请求超时 |
 | `OPENAI_STREAM_TIMEOUT_MS` | `180000` | 服务端流式 AI 请求超时 |
 | `VITE_STREAM_TIMEOUT_MS` | `180000` | 前端等待 SSE 的超时 |
+
+## 生产部署
+
+现在支持 **单机一体部署**：构建完成后，`server/index.js` 会在存在 `dist` 时同时托管前端静态文件与 `/api` 接口。
+
+最简生产流程：
+
+```bash
+npm install
+npm run build
+npm run start
+```
+
+默认情况下：
+
+- 前端与 API 同域同端口
+- 不再强制依赖额外的静态托管平台
+- `VITE_API_BASE_URL` 留空即可
+
+如果你仍然采用前后端分离部署：
+
+- 前端构建时设置 `VITE_API_BASE_URL`
+- 后端设置 `CORS_ORIGIN`，支持单个域名、多个域名（逗号分隔）或 `*`
 
 ## 网页内 AI 配置
 

@@ -1,4 +1,8 @@
+import { createReadStream, existsSync } from 'node:fs';
+import { stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
+import { dirname, extname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { tarotCards } from '../src/data/tarotCards.js';
 import {
   runReadingOrchestrator,
@@ -9,32 +13,101 @@ import {
 import { streamReadingFrames, writeSseEvent } from './ai/streaming.js';
 
 const env = globalThis.process?.env ?? {};
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const projectRoot = resolve(__dirname, '..');
+const distDir = resolve(projectRoot, env.STATIC_DIST_DIR || 'dist');
+const distIndexPath = resolve(distDir, 'index.html');
+const hasStaticBuild = existsSync(distIndexPath);
+
 const PORT = Number(env.PORT || 8787);
 const MAX_BODY_SIZE = 1024 * 1024;
 
 const cardIndex = new Map(tarotCards.map((card) => [card.id, card]));
 
-const commonCorsHeaders = {
-  'Access-Control-Allow-Origin': env.CORS_ORIGIN || '*',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+const mimeTypes = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.mjs': 'application/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+  '.ico': 'image/x-icon',
+  '.txt': 'text/plain; charset=utf-8',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
 };
 
-const sendJson = (response, statusCode, payload) => {
+const normalizeOriginList = (value) => {
+  if (typeof value !== 'string') {
+    return [];
+  }
+
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const configuredOrigins = normalizeOriginList(env.CORS_ORIGIN);
+
+const getCorsHeaders = (request) => {
+  const headers = {
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+  };
+
+  if (configuredOrigins.length === 0) {
+    return headers;
+  }
+
+  if (configuredOrigins.includes('*')) {
+    return {
+      ...headers,
+      'Access-Control-Allow-Origin': '*',
+    };
+  }
+
+  const requestOrigin = request.headers.origin;
+
+  if (requestOrigin && configuredOrigins.includes(requestOrigin)) {
+    return {
+      ...headers,
+      'Access-Control-Allow-Origin': requestOrigin,
+      Vary: 'Origin',
+    };
+  }
+
+  if (!requestOrigin && configuredOrigins.length === 1) {
+    return {
+      ...headers,
+      'Access-Control-Allow-Origin': configuredOrigins[0],
+      Vary: 'Origin',
+    };
+  }
+
+  return headers;
+};
+
+const sendJson = (request, response, statusCode, payload) => {
   response.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
-    ...commonCorsHeaders,
+    ...getCorsHeaders(request),
   });
   response.end(JSON.stringify(payload));
 };
 
-const openEventStream = (response) => {
+const openEventStream = (request, response) => {
   response.writeHead(200, {
     'Content-Type': 'text/event-stream; charset=utf-8',
     'Cache-Control': 'no-cache, no-transform',
     Connection: 'keep-alive',
     'X-Accel-Buffering': 'no',
-    ...commonCorsHeaders,
+    ...getCorsHeaders(request),
   });
 
   response.socket?.setNoDelay?.(true);
@@ -140,36 +213,109 @@ const formatPhaseLog = (phase = {}) => {
   return `[reading phase] ${phase.stage || 'unknown'}:${phase.status || 'unknown'}${suffix}${detail}`;
 };
 
-const server = createServer(async (request, response) => {
-  if (request.method === 'OPTIONS') {
-    response.writeHead(204, commonCorsHeaders);
+const getStaticContentType = (filePath) => mimeTypes[extname(filePath).toLowerCase()] || 'application/octet-stream';
+
+const canServeStatic = hasStaticBuild;
+
+const resolveStaticFilePath = (pathname) => {
+  const decodedPath = decodeURIComponent(pathname);
+  const relativePath = decodedPath === '/' ? '/index.html' : decodedPath;
+  const filePath = resolve(distDir, `.${relativePath}`);
+
+  if (!filePath.startsWith(distDir)) {
+    return null;
+  }
+
+  return filePath;
+};
+
+const sendFile = async (request, response, filePath) => {
+  const fileStats = await stat(filePath);
+
+  response.writeHead(200, {
+    'Content-Type': getStaticContentType(filePath),
+    'Content-Length': fileStats.size,
+    'Cache-Control': filePath.includes('/assets/') ? 'public, max-age=31536000, immutable' : 'no-cache',
+  });
+
+  if (request.method === 'HEAD') {
     response.end();
     return;
   }
 
-  if (request.method === 'GET' && request.url === '/health') {
-    sendJson(response, 200, {
+  await new Promise((resolvePromise, rejectPromise) => {
+    const stream = createReadStream(filePath);
+    stream.on('error', rejectPromise);
+    stream.on('end', resolvePromise);
+    stream.pipe(response, { end: true });
+  });
+};
+
+const maybeServeStatic = async (request, response, pathname) => {
+  if (!canServeStatic || !['GET', 'HEAD'].includes(request.method)) {
+    return false;
+  }
+
+  if (pathname === '/health' || pathname.startsWith('/api/')) {
+    return false;
+  }
+
+  const directFilePath = resolveStaticFilePath(pathname);
+
+  if (directFilePath) {
+    try {
+      const fileStats = await stat(directFilePath);
+      if (fileStats.isFile()) {
+        await sendFile(request, response, directFilePath);
+        return true;
+      }
+    } catch {
+      // fall through to SPA fallback
+    }
+  }
+
+  if (extname(pathname)) {
+    return false;
+  }
+
+  await sendFile(request, response, distIndexPath);
+  return true;
+};
+
+const requestHandler = async (request, response) => {
+  const requestUrl = new URL(request.url || '/', 'http://localhost');
+  const pathname = requestUrl.pathname;
+
+  if (request.method === 'OPTIONS') {
+    response.writeHead(204, getCorsHeaders(request));
+    response.end();
+    return;
+  }
+
+  if (request.method === 'GET' && pathname === '/health') {
+    sendJson(request, response, 200, {
       ok: true,
       provider: getActiveProvider(),
       orchestration: getActiveOrchestrationMode(),
       model: env.OPENAI_MODEL || 'gpt-5-mini',
+      staticApp: canServeStatic,
     });
     return;
   }
 
-  if (request.method === 'POST' && request.url === '/api/connection-test') {
+  if (request.method === 'POST' && pathname === '/api/connection-test') {
     try {
       const body = await readJsonBody(request);
       const payload = validateConnectionTestRequest(body);
       const result = await testReadingProviderConnection(payload);
-      sendJson(response, 200, result);
+      sendJson(request, response, 200, result);
     } catch (error) {
-      sendJson(response, 400, { error: error.message || 'Connection test failed' });
+      sendJson(request, response, 400, { error: error.message || 'Connection test failed' });
     }
     return;
   }
 
-  if (request.method === 'POST' && request.url === '/api/reading/stream') {
+  if (request.method === 'POST' && pathname === '/api/reading/stream') {
     const abortedRef = { current: false };
     request.on('aborted', () => {
       abortedRef.current = true;
@@ -181,7 +327,7 @@ const server = createServer(async (request, response) => {
     try {
       const body = await readJsonBody(request);
       const payload = validateRequest(body);
-      openEventStream(response);
+      openEventStream(request, response);
       const runtimeProvider = getActiveProvider(payload.aiConfig);
       writeSseEvent(response, 'meta', {
         ok: true,
@@ -212,7 +358,7 @@ const server = createServer(async (request, response) => {
       }
     } catch (error) {
       if (!response.headersSent) {
-        sendJson(response, 400, { error: error.message || 'Streaming request failed' });
+        sendJson(request, response, 400, { error: error.message || 'Streaming request failed' });
         return;
       }
       writeSseEvent(response, 'error', { error: error.message || 'Streaming request failed' });
@@ -222,21 +368,40 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  if (request.method === 'POST' && (request.url === '/api/reading' || request.url === '/api/followup')) {
+  if (request.method === 'POST' && (pathname === '/api/reading' || pathname === '/api/followup')) {
     try {
       const body = await readJsonBody(request);
       const payload = validateRequest(body);
       const result = await runReadingOrchestrator(payload);
-      sendJson(response, 200, result);
+      sendJson(request, response, 200, result);
     } catch (error) {
-      sendJson(response, 400, { error: error.message || 'Request failed' });
+      sendJson(request, response, 400, { error: error.message || 'Request failed' });
     }
     return;
   }
 
-  sendJson(response, 404, { error: 'Not found' });
-});
+  if (await maybeServeStatic(request, response, pathname)) {
+    return;
+  }
 
-server.listen(PORT, () => {
-  console.log(`Tarot AI API listening on http://localhost:${PORT}`);
-});
+  sendJson(request, response, 404, { error: 'Not found' });
+};
+
+export const createTarotServer = () => createServer(requestHandler);
+
+export const startServer = () => {
+  const server = createTarotServer();
+  server.listen(PORT, () => {
+    const staticMessage = canServeStatic
+      ? ` and frontend on http://localhost:${PORT}`
+      : '';
+    console.log(`Tarot AI API listening on http://localhost:${PORT}${staticMessage}`);
+  });
+  return server;
+};
+
+const isMainModule = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isMainModule) {
+  startServer();
+}
