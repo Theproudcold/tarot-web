@@ -3,15 +3,18 @@ import React, { useEffect } from 'react';
 import Card from './Card'; // Import Card component
 
 const CardDetailModal = ({ card, onClose, language = 'en' }) => {
-  if (!card) return null;
-
-  // Prevent background scroll when modal is open
   useEffect(() => {
+    if (!card) {
+      return undefined;
+    }
+
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, []);
+  }, [card]);
+
+  if (!card) return null;
 
   const getLocalized = (obj) => {
     if (typeof obj === 'string') return obj;

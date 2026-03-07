@@ -400,7 +400,8 @@ export const startServer = () => {
   return server;
 };
 
-const isMainModule = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+const argv = globalThis.process?.argv || [];
+const isMainModule = argv[1] && resolve(argv[1]) === fileURLToPath(import.meta.url);
 
 if (isMainModule) {
   startServer();
