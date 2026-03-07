@@ -31,8 +31,19 @@ Mystic Tarot is designed to make the full reading pipeline visible and trustwort
 - Compatible with third-party OpenAI-style providers.
 - Three-stage pipeline: `Card draft / Reading review / Final reading`.
 - Real-time progress timeline and stage logs.
-- Local history with preview thumbnails.
+- The gallery now supports `search / grouped browsing / quick jump / favorites / compare / recent views`.
 - Automatic fallback to server or local reading when AI is unavailable.
+
+## Card Gallery
+
+The gallery is now designed as a reference workspace instead of a simple 78-card wall:
+
+- Search and filter by `name / arcana / suit / element`.
+- Sort by `suit / name / element / favorites first / id`.
+- Switch between `grid view` and `grouped view`, then jump directly to `Major Arcana / Wands / Cups / Swords / Pentacles`.
+- Keep `recently viewed` cards, save local `favorites`, and compare up to `3` cards side by side.
+- Trigger `favorite / compare` actions directly from the detail modal, with `← → / Esc` keyboard support.
+- On mobile, the filter toolbar collapses to reduce above-the-fold crowding.
 
 ## Quick Start
 

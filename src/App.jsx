@@ -419,7 +419,7 @@ function App() {
         )}
 
         {viewMode === 'gallery' && (
-          <Gallery cards={tarotCards} language={language} />
+          <Gallery cards={tarotCards} language={language} t={t} />
         )}
 
         {viewMode === 'history' && (
