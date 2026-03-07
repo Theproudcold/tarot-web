@@ -17,5 +17,10 @@ export default defineConfig(({ mode }) => {
         '/health': devApiTarget,
       },
     },
+    test: {
+      environment: 'jsdom',
+      setupFiles: './src/test/setup.js',
+      pool: 'forks',
+    },
   };
 });
