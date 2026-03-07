@@ -1,0 +1,24 @@
+services:
+  tarot-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_BASE_PATH: ${VITE_BASE_PATH:-/}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+        VITE_STREAM_TIMEOUT_MS: ${VITE_STREAM_TIMEOUT_MS:-180000}
+    image: mystic-tarot:latest
+    ports:
+      - "8787:8787"
+    environment:
+      NODE_ENV: production
+      PORT: 8787
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-mini}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      AI_PROVIDER: ${AI_PROVIDER:-auto}
+      AI_ORCHESTRATION: ${AI_ORCHESTRATION:-multi}
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
+      OPENAI_REQUEST_TIMEOUT_MS: ${OPENAI_REQUEST_TIMEOUT_MS:-90000}
+      OPENAI_STREAM_TIMEOUT_MS: ${OPENAI_STREAM_TIMEOUT_MS:-180000}
+    restart: unless-stopped

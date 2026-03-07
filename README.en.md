@@ -108,6 +108,51 @@ If you still deploy frontend and backend separately:
 - set `VITE_API_BASE_URL` when building the frontend
 - set `CORS_ORIGIN` on the backend; it now supports a single origin, multiple comma-separated origins, or `*`
 
+## Docker Deployment
+
+The repository now includes both a root-level `Dockerfile` and `compose.yaml` for single-container deployment.
+
+### Option 1: Build the image directly
+
+```bash
+docker build -t mystic-tarot .
+```
+
+Run the container:
+
+```bash
+docker run -d --name mystic-tarot -p 8787:8787 --env-file .env mystic-tarot
+```
+
+### Option 2: Use Docker Compose
+
+If a project-level `.env` file already exists:
+
+```bash
+docker compose up -d --build
+```
+
+Stop the service:
+
+```bash
+docker compose down
+```
+
+### Common scenarios
+
+- For subpath deployment, set `VITE_BASE_PATH=/your-subpath/` before building
+- For split frontend/backend deployment, set `VITE_API_BASE_URL=https://api.example.com` before building
+- To change the frontend stream timeout, set `VITE_STREAM_TIMEOUT_MS=240000` before building
+- Runtime settings can still override the container: `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_BASE_URL`, `AI_PROVIDER`, `AI_ORCHESTRATION`, `CORS_ORIGIN`
+
+### Image characteristics
+
+- Uses multi-stage builds and keeps only production dependencies in the final image
+- Runs as a non-root user inside the container
+- Includes a built-in `/health` healthcheck for deployment platforms
+- Continues to serve both `dist` and `/api` from the same Node process
+- `.dockerignore` excludes `.env`, so local secrets are not sent to the build context
+
 ## Browser AI Settings
 
 The right-side settings panel allows users to:

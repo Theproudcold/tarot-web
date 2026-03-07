@@ -117,6 +117,51 @@ npm run start
 - 前端构建时设置 `VITE_API_BASE_URL`
 - 后端设置 `CORS_ORIGIN`，支持单个域名、多个域名（逗号分隔）或 `*`
 
+## Docker 部署
+
+项目已提供根目录 `Dockerfile` 与 `compose.yaml`，支持一体化镜像构建和单容器运行。
+
+### 方式一：直接构建镜像
+
+```bash
+docker build -t mystic-tarot .
+```
+
+运行容器：
+
+```bash
+docker run -d --name mystic-tarot -p 8787:8787 --env-file .env mystic-tarot
+```
+
+### 方式二：使用 Docker Compose
+
+如果根目录已有 `.env`：
+
+```bash
+docker compose up -d --build
+```
+
+停止服务：
+
+```bash
+docker compose down
+```
+
+### 常见场景
+
+- 子路径部署：在构建前设置 `VITE_BASE_PATH=/your-subpath/`
+- 前后端分离：在构建前设置 `VITE_API_BASE_URL=https://api.example.com`
+- 需要调整前端流式超时：在构建前设置 `VITE_STREAM_TIMEOUT_MS=240000`
+- 运行时可覆盖：`OPENAI_API_KEY`、`OPENAI_MODEL`、`OPENAI_BASE_URL`、`AI_PROVIDER`、`AI_ORCHESTRATION`、`CORS_ORIGIN`
+
+### 当前镜像特性
+
+- 使用多阶段构建，镜像内仅保留生产依赖
+- 容器内以非 root 用户运行
+- 内置 `/health` 健康检查，方便部署平台探活
+- 仍由 Node 同时托管 `dist` 与 `/api`
+- `.dockerignore` 已排除 `.env`，不会把本地密钥打进构建上下文
+
 ## 网页内 AI 配置
 
 阅读页右侧的 AI 配置面板支持以下能力：
