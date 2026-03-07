@@ -161,6 +161,11 @@ const Gallery = ({ cards, language = 'en', t = (key) => key }) => {
         return collator.compare(left.element || '', right.element || '') || left.id - right.id;
       }
 
+      if (sortBy === 'favorites') {
+        const favoriteDelta = Number(favoriteCardIds.includes(right.id)) - Number(favoriteCardIds.includes(left.id));
+        return favoriteDelta || left.id - right.id;
+      }
+
       if (sortBy === 'arcana') {
         const leftOrder = SECTION_ORDER.get(left.suite?.en || leftSuite) ?? 99;
         const rightOrder = SECTION_ORDER.get(right.suite?.en || rightSuite) ?? 99;
@@ -504,6 +509,7 @@ const Gallery = ({ cards, language = 'en', t = (key) => key }) => {
                 <option value="arcana">{t('gallerySortArcana')}</option>
                 <option value="name">{t('gallerySortName')}</option>
                 <option value="element">{t('gallerySortElement')}</option>
+                <option value="favorites">{t('gallerySortFavorites')}</option>
                 <option value="id">{t('gallerySortId')}</option>
               </select>
               <button
@@ -789,6 +795,11 @@ const Gallery = ({ cards, language = 'en', t = (key) => key }) => {
           onNext={selectedCardIndex < navigationCards.length - 1 ? () => openCard(navigationCards[selectedCardIndex + 1].id) : null}
           hasPrev={selectedCardIndex > 0}
           hasNext={selectedCardIndex < navigationCards.length - 1}
+          isFavorite={favoriteCardIds.includes(selectedCard.id)}
+          isCompared={compareCardIds.includes(selectedCard.id)}
+          compareLimitReached={compareCardIds.length >= COMPARE_CARD_LIMIT && !compareCardIds.includes(selectedCard.id)}
+          onToggleFavorite={() => toggleFavorite(selectedCard.id)}
+          onToggleCompare={() => toggleCompare(selectedCard.id)}
           progressLabel={`${selectedCardIndex + 1} / ${navigationCards.length}`}
           t={t}
         />

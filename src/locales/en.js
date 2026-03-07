@@ -67,6 +67,7 @@ export const en = {
   gallerySortName: 'Sort by name',
   gallerySortElement: 'Sort by element',
   gallerySortId: 'Sort by id',
+  gallerySortFavorites: 'Favorites first',
   galleryModeLabel: 'Browse Mode',
   galleryViewGrid: 'Grid View',
   galleryViewGrouped: 'Grouped View',

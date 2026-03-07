@@ -67,6 +67,7 @@ export const zh = {
   gallerySortName: '按名称',
   gallerySortElement: '按元素',
   gallerySortId: '按编号',
+  gallerySortFavorites: '收藏优先',
   galleryModeLabel: '浏览模式',
   galleryViewGrid: '网格浏览',
   galleryViewGrouped: '分组浏览',

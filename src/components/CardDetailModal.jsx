@@ -10,6 +10,11 @@ const CardDetailModal = ({
   onNext,
   hasPrev = false,
   hasNext = false,
+  isFavorite = false,
+  isCompared = false,
+  compareLimitReached = false,
+  onToggleFavorite,
+  onToggleCompare,
   progressLabel = '',
   t = (key) => key,
 }) => {
@@ -133,6 +138,25 @@ const CardDetailModal = ({
                     <span className="rounded-full border border-tarot-gold/20 bg-tarot-gold/10 px-3 py-1.5 text-tarot-gold">{localizedElement}</span>
                   )}
                 </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={onToggleCompare}
+                  disabled={!onToggleCompare || compareLimitReached}
+                  className={`rounded-full border px-4 py-2 text-sm transition-colors ${isCompared ? 'border-sky-400/40 bg-sky-400/15 text-sky-100' : 'border-white/10 bg-black/20 text-gray-300 hover:border-sky-300/40 hover:text-sky-100'} ${compareLimitReached ? 'cursor-not-allowed opacity-40' : ''}`}
+                >
+                  {isCompared ? t('galleryCompareRemove') : t('galleryCompareAdd')}
+                </button>
+                <button
+                  type="button"
+                  onClick={onToggleFavorite}
+                  disabled={!onToggleFavorite}
+                  className={`rounded-full border px-4 py-2 text-sm transition-colors ${isFavorite ? 'border-amber-300/30 bg-amber-400/15 text-amber-100' : 'border-white/10 bg-black/20 text-gray-300 hover:border-amber-300/40 hover:text-amber-100'}`}
+                >
+                  {isFavorite ? t('galleryFavoriteRemove') : t('galleryFavoriteAdd')}
+                </button>
               </div>
             </div>
 
