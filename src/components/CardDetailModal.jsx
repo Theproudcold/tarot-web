@@ -23,6 +23,7 @@ const CardDetailModal = ({
       return undefined;
     }
 
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
     const handleKeyDown = (event) => {
@@ -40,7 +41,7 @@ const CardDetailModal = ({
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [card, hasNext, hasPrev, onClose, onNext, onPrev]);
@@ -68,9 +69,15 @@ const CardDetailModal = ({
     : '';
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/80 p-3 backdrop-blur-md md:items-center md:p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/80 p-3 backdrop-blur-md md:items-center md:p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={getLocalized(card.name)}
+    >
       <div
-        className="relative my-4 w-full max-w-5xl rounded-3xl border border-white/10 bg-[#0a1020] shadow-2xl shadow-black/40 md:max-h-[calc(100dvh-2rem)] md:overflow-hidden"
+        className="relative my-4 flex max-h-[calc(100dvh-1.5rem)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0a1020] shadow-2xl shadow-black/40 md:max-h-[calc(100dvh-2rem)]"
         onClick={(event) => event.stopPropagation()}
       >
         <button
@@ -81,8 +88,8 @@ const CardDetailModal = ({
           &times;
         </button>
 
-        <div className="flex flex-col md:grid md:max-h-[calc(100dvh-2rem)] md:grid-cols-[minmax(280px,0.95fr),minmax(0,1.05fr)]">
-          <div className="relative flex min-h-[280px] items-center justify-center overflow-hidden border-b border-white/10 bg-black/40 px-6 py-8 sm:min-h-[340px] md:min-h-0 md:border-b-0 md:border-r md:border-white/10">
+        <div className="flex min-h-0 flex-col md:grid md:h-full md:grid-cols-[minmax(280px,0.95fr),minmax(0,1.05fr)]">
+          <div className="relative flex shrink-0 items-center justify-center overflow-hidden border-b border-white/10 bg-black/40 px-6 py-8 min-[400px]:min-h-[280px] sm:min-h-[340px] md:min-h-0 md:border-b-0 md:border-r md:border-white/10">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.12),transparent_55%)]" />
             <div className="absolute left-4 top-4 z-10 rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-xs tracking-[0.25em] text-gray-300">
               #{card.id}
@@ -127,7 +134,7 @@ const CardDetailModal = ({
             </div>
           </div>
 
-          <div className="overflow-y-visible bg-tarot-bg/35 p-6 text-left md:overflow-y-auto md:p-8 lg:p-10">
+          <div className="min-h-0 overflow-y-auto bg-tarot-bg/35 p-6 text-left md:p-8 lg:p-10">
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-white/10 pb-6 pr-12">
               <div>
                 <p className="mb-2 text-xs uppercase tracking-[0.35em] text-tarot-gold/70">{t('galleryDetailEyebrow')}</p>
