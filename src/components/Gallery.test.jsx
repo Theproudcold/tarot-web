@@ -1,14 +1,21 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import Gallery from './Gallery';
+import { ToastProvider } from './ToastProvider';
 
 vi.mock('./Card', () => ({
   default: ({ card }) => <div data-testid={`card-${card.id}`} aria-hidden="true" />,
 }));
 
 vi.mock('./CardDetailModal', () => ({
-  default: ({ card }) => (card ? <div data-testid="card-detail-modal">{card.name.en}</div> : null),
+  default: ({ card, onClose, onShare, t }) => (card ? (
+    <div data-testid="card-detail-modal">
+      <div>{card.name.en}</div>
+      <button type="button" onClick={onClose}>Close Modal</button>
+      <button type="button" onClick={onShare}>{t('galleryShareAction')}</button>
+    </div>
+  ) : null),
 }));
 
 const cards = [
@@ -93,6 +100,16 @@ const translations = {
   galleryCompareClear: 'Clear Compare',
   galleryCompareCounter: 'Selected',
   galleryCompareNeedMore: 'Choose at least two cards for a more useful comparison.',
+  galleryShareAction: 'Share Link',
+  galleryShareCopied: 'Link copied and ready to share.',
+  galleryShareShared: 'Share sheet opened.',
+  galleryShareFailed: 'Could not share this link right now.',
+  galleryToastFavoriteAdded: 'Added to favorites.',
+  galleryToastFavoriteRemoved: 'Removed from favorites.',
+  galleryToastCompareAdded: 'Added to compare.',
+  galleryToastCompareRemoved: 'Removed from compare.',
+  galleryToastCompareCleared: 'Compare list cleared.',
+  galleryToastRecentCleared: 'Recently viewed cleared.',
   upright: 'Upright',
   reversed: 'Reversed',
   viewDetails: 'View Details',
@@ -115,6 +132,13 @@ const translations = {
 };
 
 const t = (key) => translations[key] ?? key;
+const clipboardWriteText = vi.fn();
+
+const renderGallery = () => render(
+  <ToastProvider>
+    <Gallery cards={cards} language="en" t={t} />
+  </ToastProvider>,
+);
 
 const getCardArticle = (name) => {
   const cardTitle = screen.getByText(name);
@@ -130,6 +154,13 @@ const getCardArticle = (name) => {
 describe('Gallery', () => {
   beforeEach(() => {
     window.localStorage.clear();
+    window.history.replaceState({}, '', '/');
+    clipboardWriteText.mockReset();
+    clipboardWriteText.mockResolvedValue(undefined);
+    Object.defineProperty(window.navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: clipboardWriteText },
+    });
   });
 
   afterEach(() => {
@@ -137,7 +168,7 @@ describe('Gallery', () => {
   });
 
   it('filters cards by search term', () => {
-    render(<Gallery cards={cards} language="en" t={t} />);
+    renderGallery();
 
     fireEvent.change(screen.getByLabelText('Search'), { target: { value: 'Magician' } });
 
@@ -146,11 +177,12 @@ describe('Gallery', () => {
   });
 
   it('stores favorites and supports favorites-only mode', () => {
-    render(<Gallery cards={cards} language="en" t={t} />);
+    renderGallery();
 
     fireEvent.click(within(getCardArticle('The Fool')).getByRole('button', { name: 'Add to favorites' }));
 
     expect(window.localStorage.getItem('tarot-gallery-favorite-card-ids')).toBe('[1]');
+    expect(screen.getByRole('status')).toHaveTextContent('Added to favorites.');
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Favorites Only' })[0]);
 
@@ -159,7 +191,7 @@ describe('Gallery', () => {
   });
 
   it('limits compare selection to three cards', () => {
-    render(<Gallery cards={cards} language="en" t={t} />);
+    renderGallery();
 
     fireEvent.click(within(getCardArticle('The Fool')).getByRole('button', { name: 'Add to compare' }));
     fireEvent.click(within(getCardArticle('The Magician')).getByRole('button', { name: 'Add to compare' }));
@@ -171,11 +203,69 @@ describe('Gallery', () => {
   });
 
   it('toggles the mobile filter label', () => {
-    render(<Gallery cards={cards} language="en" t={t} />);
+    renderGallery();
 
     const toggleButton = screen.getByRole('button', { name: /Show Filters/i });
     fireEvent.click(toggleButton);
 
     expect(screen.getByRole('button', { name: /Hide Filters/i })).toBeInTheDocument();
+  });
+
+  it('opens the detail modal from the URL card param', () => {
+    window.history.replaceState({}, '', '/?view=gallery&card=2');
+
+    renderGallery();
+
+    expect(screen.getByTestId('card-detail-modal')).toHaveTextContent('The Magician');
+  });
+
+  it('syncs modal open and close state to the URL', () => {
+    renderGallery();
+
+    fireEvent.click(within(getCardArticle('The Fool')).getByTestId('card-1'));
+
+    expect(window.location.search).toContain('view=gallery');
+    expect(window.location.search).toContain('card=1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close Modal' }));
+
+    expect(window.location.search).toContain('view=gallery');
+    expect(window.location.search).not.toContain('card=1');
+  });
+
+  it('copies a shareable deep link for the current card', async () => {
+    renderGallery();
+
+    fireEvent.click(within(getCardArticle('The Magician')).getByTestId('card-2'));
+    fireEvent.click(screen.getByRole('button', { name: 'Share Link' }));
+
+    await waitFor(() => {
+      expect(clipboardWriteText).toHaveBeenCalledTimes(1);
+    });
+
+    const copiedUrl = new URL(clipboardWriteText.mock.calls[0][0]);
+    expect(copiedUrl.searchParams.get('view')).toBe('gallery');
+    expect(copiedUrl.searchParams.get('card')).toBe('2');
+    expect(copiedUrl.searchParams.get('lang')).toBe('en');
+    expect(screen.getByText('Link copied and ready to share.')).toBeInTheDocument();
+  });
+
+  it('shows a toast when compare cards are cleared', () => {
+    renderGallery();
+
+    fireEvent.click(within(getCardArticle('The Fool')).getByRole('button', { name: 'Add to compare' }));
+    fireEvent.click(within(getCardArticle('The Magician')).getByRole('button', { name: 'Add to compare' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Clear Compare' }));
+
+    expect(screen.getByRole('status')).toHaveTextContent('Compare list cleared.');
+  });
+
+  it('shows a toast when recent cards are cleared', () => {
+    renderGallery();
+
+    fireEvent.click(within(getCardArticle('The Fool')).getByTestId('card-1'));
+    fireEvent.click(screen.getByRole('button', { name: 'Clear Recent' }));
+
+    expect(screen.getByRole('status')).toHaveTextContent('Recently viewed cleared.');
   });
 });

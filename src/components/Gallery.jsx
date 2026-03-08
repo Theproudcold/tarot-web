@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import CardDetailModal from './CardDetailModal';
+import { useToast } from './ToastProvider';
 import GalleryCardTile from './gallery/GalleryCardTile';
 import GalleryComparePanel from './gallery/GalleryComparePanel';
 import GalleryFavoritesPanel from './gallery/GalleryFavoritesPanel';
@@ -18,9 +19,13 @@ import {
   createSectionId,
 } from './gallery/constants.js';
 import { readStoredJson, readStoredValue } from './gallery/storage.js';
+import { buildGalleryCardShareUrl, readCardIdFromUrl, updateUrlParams } from '../lib/urlState.js';
 
 const Gallery = ({ cards, language = 'en', t = (key) => key }) => {
-  const [selectedCardId, setSelectedCardId] = useState(null);
+  const [selectedCardId, setSelectedCardId] = useState(() => {
+    const initialCardId = readCardIdFromUrl();
+    return cards.some((card) => card.id === initialCardId) ? initialCardId : null;
+  });
   const [query, setQuery] = useState('');
   const [arcanaFilter, setArcanaFilter] = useState('all');
   const [suiteFilter, setSuiteFilter] = useState('all');
@@ -46,6 +51,8 @@ const Gallery = ({ cards, language = 'en', t = (key) => key }) => {
   const [compareCardIds, setCompareCardIds] = useState([]);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_COUNT);
+
+  const { showToast } = useToast();
 
   const getLocalized = useCallback((value) => {
     if (typeof value === 'string') return value;
@@ -160,17 +167,44 @@ const Gallery = ({ cards, language = 'en', t = (key) => key }) => {
   const recentCards = useMemo(() => recentCardIds.map((id) => cardMap.get(id)).filter(Boolean), [cardMap, recentCardIds]);
   const compareCards = useMemo(() => compareCardIds.map((id) => cardMap.get(id)).filter(Boolean), [cardMap, compareCardIds]);
 
+  const resolveSelectedCardIdFromUrl = useCallback(() => {
+    const nextCardId = readCardIdFromUrl();
+    return nextCardId !== null && cardMap.has(nextCardId) ? nextCardId : null;
+  }, [cardMap]);
+
   useEffect(() => {
     setVisibleCount(INITIAL_VISIBLE_COUNT);
   }, [normalizedQuery, arcanaFilter, suiteFilter, elementFilter, sortBy, favoritesOnly]);
 
   useEffect(() => {
-    if (!selectedCardId) {
-      return;
+    setSelectedCardId((current) => {
+      const nextCardId = resolveSelectedCardIdFromUrl();
+      if (current !== null && cardMap.has(current)) {
+        return current;
+      }
+      return nextCardId;
+    });
+  }, [cardMap, resolveSelectedCardIdFromUrl]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
     }
-    if (!cardMap.has(selectedCardId)) {
-      setSelectedCardId(null);
-    }
+
+    const syncSelectedCardFromUrl = () => {
+      const nextCardId = resolveSelectedCardIdFromUrl();
+      setSelectedCardId((current) => (current === nextCardId ? current : nextCardId));
+    };
+
+    window.addEventListener('popstate', syncSelectedCardFromUrl);
+    return () => window.removeEventListener('popstate', syncSelectedCardFromUrl);
+  }, [resolveSelectedCardIdFromUrl]);
+
+  useEffect(() => {
+    updateUrlParams({
+      view: 'gallery',
+      card: selectedCardId !== null && cardMap.has(selectedCardId) ? selectedCardId : null,
+    });
   }, [cardMap, selectedCardId]);
 
   useEffect(() => {
@@ -209,7 +243,7 @@ const Gallery = ({ cards, language = 'en', t = (key) => key }) => {
   }, [allCardsSorted, filteredCards, selectedCardId]);
 
   const selectedCardIndex = navigationCards.findIndex((card) => card.id === selectedCardId);
-  const selectedCard = selectedCardId ? cardMap.get(selectedCardId) ?? null : null;
+  const selectedCard = selectedCardId !== null ? cardMap.get(selectedCardId) ?? null : null;
   const visibleCards = filteredCards.slice(0, visibleCount);
   const hasActiveFilters = Boolean(normalizedQuery) || arcanaFilter !== 'all' || suiteFilter !== 'all' || elementFilter !== 'all' || favoritesOnly;
   const activeFilterCount = [
@@ -230,27 +264,43 @@ const Gallery = ({ cards, language = 'en', t = (key) => key }) => {
   };
 
   const toggleFavorite = (cardId) => {
+    const isFavorite = favoriteCardIds.includes(cardId);
+
     setFavoriteCardIds((current) => (
-      current.includes(cardId)
+      isFavorite
         ? current.filter((item) => item !== cardId)
         : [cardId, ...current.filter((item) => item !== cardId)]
     ));
+
+    showToast({
+      message: isFavorite ? t('galleryToastFavoriteRemoved') : t('galleryToastFavoriteAdded'),
+      tone: 'success',
+    });
   };
 
   const toggleCompare = (cardId, clearAll = false) => {
     if (clearAll) {
-      setCompareCardIds([]);
+      if (compareCardIds.length > 0) {
+        setCompareCardIds([]);
+        showToast({ message: t('galleryToastCompareCleared'), tone: 'info' });
+      }
       return;
     }
 
-    setCompareCardIds((current) => {
-      if (current.includes(cardId)) {
-        return current.filter((item) => item !== cardId);
-      }
-      if (current.length >= COMPARE_CARD_LIMIT) {
-        return current;
-      }
-      return [...current, cardId];
+    const isCompared = compareCardIds.includes(cardId);
+    if (!isCompared && compareCardIds.length >= COMPARE_CARD_LIMIT) {
+      return;
+    }
+
+    setCompareCardIds((current) => (
+      isCompared
+        ? current.filter((item) => item !== cardId)
+        : [...current, cardId]
+    ));
+
+    showToast({
+      message: isCompared ? t('galleryToastCompareRemoved') : t('galleryToastCompareAdded'),
+      tone: 'info',
     });
   };
 
@@ -268,6 +318,67 @@ const Gallery = ({ cards, language = 'en', t = (key) => key }) => {
     const targetElement = document.getElementById(createSectionId(sectionKey));
     targetElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+
+  const copyTextToClipboard = useCallback(async (textToCopy) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(textToCopy);
+      return;
+    }
+
+    if (typeof document === 'undefined') {
+      throw new Error('clipboard-unavailable');
+    }
+
+    const temporaryTextarea = document.createElement('textarea');
+    temporaryTextarea.value = textToCopy;
+    temporaryTextarea.setAttribute('readonly', '');
+    temporaryTextarea.style.position = 'fixed';
+    temporaryTextarea.style.opacity = '0';
+    temporaryTextarea.style.pointerEvents = 'none';
+
+    document.body.appendChild(temporaryTextarea);
+    temporaryTextarea.focus();
+    temporaryTextarea.select();
+
+    const copied = document.execCommand?.('copy');
+    document.body.removeChild(temporaryTextarea);
+
+    if (!copied) {
+      throw new Error('copy-failed');
+    }
+  }, []);
+
+  const shareSelectedCard = useCallback(async () => {
+    if (!selectedCard) {
+      return;
+    }
+
+    const shareUrl = buildGalleryCardShareUrl(selectedCard.id, language);
+    const shareData = {
+      title: `${getLocalized(selectedCard.name)} · ${t('galleryTitle')}`,
+      text: `${getLocalized(selectedCard.name)} · ${getLocalized(selectedCard.suite)}`,
+      url: shareUrl,
+    };
+
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share(shareData);
+        showToast({ message: t('galleryShareShared'), tone: 'success' });
+        return;
+      } catch (error) {
+        if (error?.name === 'AbortError') {
+          return;
+        }
+      }
+    }
+
+    try {
+      await copyTextToClipboard(shareUrl);
+      showToast({ message: t('galleryShareCopied'), tone: 'success' });
+    } catch {
+      showToast({ message: t('galleryShareFailed'), tone: 'error' });
+    }
+  }, [copyTextToClipboard, getLocalized, language, selectedCard, showToast, t]);
 
   const renderCardTile = useCallback((card) => {
     const localizedName = getLocalized(card.name);
@@ -383,7 +494,10 @@ const Gallery = ({ cards, language = 'en', t = (key) => key }) => {
         getLocalized={getLocalized}
         language={language}
         onOpenCard={openCard}
-        onClearRecent={() => setRecentCardIds([])}
+        onClearRecent={() => {
+          setRecentCardIds([]);
+          showToast({ message: t('galleryToastRecentCleared'), tone: 'info' });
+        }}
         t={t}
       />
 
@@ -441,6 +555,7 @@ const Gallery = ({ cards, language = 'en', t = (key) => key }) => {
           compareLimitReached={compareCardIds.length >= COMPARE_CARD_LIMIT && !compareCardIds.includes(selectedCard.id)}
           onToggleFavorite={() => toggleFavorite(selectedCard.id)}
           onToggleCompare={() => toggleCompare(selectedCard.id)}
+          onShare={shareSelectedCard}
           progressLabel={`${selectedCardIndex + 1} / ${navigationCards.length}`}
           t={t}
         />

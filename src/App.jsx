@@ -8,10 +8,12 @@ import RuntimeStatusBar from './components/RuntimeStatusBar';
 import AiSettingsPanel from './components/AiSettingsPanel';
 import { useTranslation } from './hooks/useTranslation';
 import History from './components/History';
+import { ToastProvider } from './components/ToastProvider';
 import { requestReadingStream } from './lib/readingApi.js';
 import { createHistoryRecord, upsertHistoryRecord } from './lib/historyStorage';
 import { loadAiSettings, saveAiSettings } from './lib/aiSettings';
 import { mergeReadingWithBase } from './lib/readingContract.js';
+import { readLanguageFromUrl, readViewModeFromUrl, updateUrlParams } from './lib/urlState.js';
 
 const phaseStageOrder = ['draft', 'review', 'finalize', 'fallback'];
 
@@ -71,7 +73,7 @@ function App() {
   const [deck, setDeck] = useState(() => createShuffledDeck());
   const [drawnCards, setDrawnCards] = useState([]);
   const [gameState, setGameState] = useState('drawing');
-  const [viewMode, setViewMode] = useState('reading');
+  const [viewMode, setViewMode] = useState(() => readViewModeFromUrl());
   const [readingQuestion, setReadingQuestion] = useState('');
   const [readingResult, setReadingResult] = useState(null);
   const [readingStatus, setReadingStatus] = useState('idle');
@@ -81,11 +83,54 @@ function App() {
   const [aiSettings, setAiSettings] = useState(() => loadAiSettings());
   const requestCounterRef = useRef(0);
 
-  const { t, language, setLanguage } = useTranslation('zh');
+  const { t, language, setLanguage } = useTranslation(readLanguageFromUrl());
 
   useEffect(() => {
     saveAiSettings(aiSettings);
   }, [aiSettings]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const syncViewModeFromUrl = () => {
+      const nextViewMode = readViewModeFromUrl();
+      setViewMode((current) => (current === nextViewMode ? current : nextViewMode));
+    };
+
+    window.addEventListener('popstate', syncViewModeFromUrl);
+    return () => window.removeEventListener('popstate', syncViewModeFromUrl);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const syncLanguageFromUrl = () => {
+      const nextLanguage = readLanguageFromUrl();
+      setLanguage((current) => (current === nextLanguage ? current : nextLanguage));
+    };
+
+    window.addEventListener('popstate', syncLanguageFromUrl);
+    return () => window.removeEventListener('popstate', syncLanguageFromUrl);
+  }, [setLanguage]);
+
+  useEffect(() => {
+    updateUrlParams(
+      viewMode === 'gallery'
+        ? { view: viewMode }
+        : {
+          view: viewMode === 'reading' ? null : viewMode,
+          card: null,
+        },
+    );
+  }, [viewMode]);
+
+  useEffect(() => {
+    updateUrlParams({ lang: language });
+  }, [language]);
 
   const shuffleDeck = useCallback(() => {
     requestCounterRef.current += 1;
@@ -271,7 +316,8 @@ function App() {
   );
 
   return (
-    <div className="min-h-screen bg-tarot-bg bg-[radial-gradient(circle_at_top,_rgba(212,175,55,0.16),_transparent_40%),linear-gradient(180deg,_rgba(10,10,18,0.98),_rgba(5,5,10,1))] text-center text-white overflow-x-hidden">
+    <ToastProvider>
+      <div className="min-h-screen bg-tarot-bg bg-[radial-gradient(circle_at_top,_rgba(212,175,55,0.16),_transparent_40%),linear-gradient(180deg,_rgba(10,10,18,0.98),_rgba(5,5,10,1))] text-center text-white overflow-x-hidden">
       <RuntimeStatusBar
         reading={readingResult}
         orchestration={readingOrchestration}
@@ -430,7 +476,8 @@ function App() {
       <footer className="bg-black/30 p-4 text-xs opacity-50">
         <p>{t('footer')}</p>
       </footer>
-    </div>
+      </div>
+    </ToastProvider>
   );
 }
 

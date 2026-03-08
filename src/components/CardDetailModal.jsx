@@ -15,6 +15,7 @@ const CardDetailModal = ({
   compareLimitReached = false,
   onToggleFavorite,
   onToggleCompare,
+  onShare,
   progressLabel = '',
   t = (key) => key,
 }) => {
@@ -147,7 +148,15 @@ const CardDetailModal = ({
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={onShare}
+                  disabled={!onShare}
+                  className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-gray-300 transition-colors hover:border-tarot-gold/40 hover:text-tarot-gold disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {t('galleryShareAction')}
+                </button>
                 <button
                   type="button"
                   onClick={onToggleCompare}
