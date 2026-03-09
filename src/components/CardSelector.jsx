@@ -34,7 +34,7 @@ const CardSelector = ({ onSelect, cardsRemaining, t }) => {
       setSelectedIndex(null);
       setHoverIndex(null);
       pickTimeoutRef.current = null;
-    }, isMobile ? 220 : 280);
+    }, isMobile ? 800 : 900);
   };
 
   const maxCards = isMobile ? 9 : 17;
@@ -77,16 +77,16 @@ const CardSelector = ({ onSelect, cardsRemaining, t }) => {
               }}
               initial={{ rotate: 0, y: 180, opacity: 0 }}
               animate={{
-                rotate: isSelected ? rotation * 0.25 : rotation,
-                y: isSelected ? (isMobile ? -88 : -130) : isHovered ? (isMobile ? -18 : -30) : 0,
-                scale: isSelected ? 1.12 : isHovered ? 1.04 : 1,
+                rotate: isSelected ? 0 : rotation,
+                y: isSelected ? (isMobile ? -140 : -220) : isHovered ? (isMobile ? -18 : -30) : 0,
+                scale: isSelected ? 1.25 : isHovered ? 1.04 : 1,
                 zIndex: isSelected ? 200 : isHovered ? 100 : index,
                 opacity: isDimmed ? 0.18 : 1,
               }}
               transition={{
                 type: 'spring',
-                stiffness: isSelected ? 220 : 160,
-                damping: isSelected ? 18 : 24,
+                stiffness: isSelected ? 180 : 160,
+                damping: isSelected ? 16 : 24,
                 mass: 0.8,
                 delay: selectedIndex === null ? index * 0.01 : 0,
               }}
