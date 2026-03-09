@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import CardDetailModal from './CardDetailModal';
 import { useToast } from './ToastProvider';
 import GalleryCardTile from './gallery/GalleryCardTile';
@@ -21,7 +21,7 @@ import {
 import { readStoredJson, readStoredValue } from './gallery/storage.js';
 import { buildGalleryCardShareUrl, readCardIdFromUrl, updateUrlParams } from '../lib/urlState.js';
 
-const Gallery = ({ cards, language = 'en', t = (key) => key }) => {
+const Gallery = ({ cards, language = 'en', selectionResetKey = 0, t = (key) => key }) => {
   const [selectedCardId, setSelectedCardId] = useState(() => {
     const initialCardId = readCardIdFromUrl();
     return cards.some((card) => card.id === initialCardId) ? initialCardId : null;
@@ -199,6 +199,14 @@ const Gallery = ({ cards, language = 'en', t = (key) => key }) => {
     window.addEventListener('popstate', syncSelectedCardFromUrl);
     return () => window.removeEventListener('popstate', syncSelectedCardFromUrl);
   }, [resolveSelectedCardIdFromUrl]);
+
+  useLayoutEffect(() => {
+    if (selectionResetKey === 0) {
+      return;
+    }
+
+    setSelectedCardId(resolveSelectedCardIdFromUrl());
+  }, [resolveSelectedCardIdFromUrl, selectionResetKey]);
 
   useEffect(() => {
     updateUrlParams({

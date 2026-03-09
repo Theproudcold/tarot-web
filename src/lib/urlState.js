@@ -21,11 +21,21 @@ const normalizeLanguage = (language, fallback = 'zh') => (
   VALID_LANGUAGES.has(language) ? language : fallback
 );
 
+const readValidCardId = (url) => {
+  const rawCardId = url.searchParams.get(URL_CARD_PARAM);
+
+  if (rawCardId === null || rawCardId.trim() === '') {
+    return null;
+  }
+
+  const cardId = Number(rawCardId);
+  return Number.isInteger(cardId) && cardId >= 0 ? cardId : null;
+};
+
 export const readViewModeFromUrl = (href) => {
   const url = getUrl(href);
-  const rawCardId = Number(url.searchParams.get(URL_CARD_PARAM));
 
-  if (Number.isInteger(rawCardId) && rawCardId >= 0) {
+  if (readValidCardId(url) !== null) {
     return 'gallery';
   }
 
@@ -35,8 +45,7 @@ export const readViewModeFromUrl = (href) => {
 
 export const readCardIdFromUrl = (href) => {
   const url = getUrl(href);
-  const cardId = Number(url.searchParams.get(URL_CARD_PARAM));
-  return Number.isInteger(cardId) && cardId >= 0 ? cardId : null;
+  return readValidCardId(url);
 };
 
 export const readLanguageFromUrl = (href, fallback = 'zh') => {

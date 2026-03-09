@@ -93,6 +93,18 @@ describe('App deep linking', () => {
     expect(window.location.search).not.toContain('card=');
   });
 
+  it('clears the selected card when gallery navigation is clicked manually', () => {
+    window.history.replaceState({}, '', '/?view=gallery&card=2&lang=en');
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Gallery' }));
+
+    expect(window.location.search).toContain('view=gallery');
+    expect(window.location.search).toContain('lang=en');
+    expect(window.location.search).not.toContain('card=');
+  });
+
   it('syncs language toggles to the URL', () => {
     render(<App />);
 

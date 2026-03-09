@@ -134,9 +134,9 @@ const translations = {
 const t = (key) => translations[key] ?? key;
 const clipboardWriteText = vi.fn();
 
-const renderGallery = () => render(
+const renderGallery = (props = {}) => render(
   <ToastProvider>
-    <Gallery cards={cards} language="en" t={t} />
+    <Gallery cards={cards} language="en" t={t} {...props} />
   </ToastProvider>,
 );
 
@@ -231,6 +231,28 @@ describe('Gallery', () => {
 
     expect(window.location.search).toContain('view=gallery');
     expect(window.location.search).not.toContain('card=1');
+  });
+
+  it('clears the open detail modal when the gallery reset key changes', async () => {
+    window.history.replaceState({}, '', '/?view=gallery&card=2&lang=en');
+
+    const { rerender } = renderGallery();
+
+    expect(screen.getByTestId('card-detail-modal')).toHaveTextContent('The Magician');
+
+    window.history.replaceState({}, '', '/?view=gallery&lang=en');
+
+    rerender(
+      <ToastProvider>
+        <Gallery cards={cards} language="en" selectionResetKey={1} t={t} />
+      </ToastProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('card-detail-modal')).not.toBeInTheDocument();
+    });
+    expect(window.location.search).toContain('view=gallery');
+    expect(window.location.search).not.toContain('card=');
   });
 
   it('copies a shareable deep link for the current card', async () => {

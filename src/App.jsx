@@ -86,6 +86,7 @@ function App() {
   const [drawnCards, setDrawnCards] = useState([]);
   const [gameState, setGameState] = useState('drawing');
   const [viewMode, setViewMode] = useState(() => readViewModeFromUrl());
+  const [gallerySelectionResetKey, setGallerySelectionResetKey] = useState(0);
   const [readingQuestion, setReadingQuestion] = useState('');
   const [readingResult, setReadingResult] = useState(null);
   const [readingStatus, setReadingStatus] = useState('idle');
@@ -130,19 +131,25 @@ function App() {
   }, [setLanguage]);
 
   useEffect(() => {
-    updateUrlParams(
-      viewMode === 'gallery'
-        ? { view: viewMode }
-        : {
-          view: viewMode === 'reading' ? null : viewMode,
-          card: null,
-        },
-    );
+    if (viewMode === 'gallery') {
+      return;
+    }
+
+    updateUrlParams({
+      view: viewMode === 'reading' ? null : viewMode,
+      card: null,
+    });
   }, [viewMode]);
 
   useEffect(() => {
     updateUrlParams({ lang: language });
   }, [language]);
+
+  const handleOpenGallery = useCallback(() => {
+    updateUrlParams({ view: 'gallery', card: null });
+    setGallerySelectionResetKey((current) => current + 1);
+    setViewMode('gallery');
+  }, []);
 
   const shuffleDeck = useCallback(() => {
     requestCounterRef.current += 1;
@@ -371,7 +378,7 @@ function App() {
               {t('navReading')}
             </button>
             <button
-              onClick={() => setViewMode('gallery')}
+              onClick={handleOpenGallery}
               className={`border-b-2 text-sm font-serif transition-colors md:text-lg ${viewMode === 'gallery' ? 'border-tarot-gold text-tarot-gold' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
             >
               {t('navGallery')}
@@ -490,7 +497,12 @@ function App() {
         )}
 
         {viewMode === 'gallery' && (
-          <Gallery cards={tarotCards} language={language} t={t} />
+          <Gallery
+            cards={tarotCards}
+            language={language}
+            selectionResetKey={gallerySelectionResetKey}
+            t={t}
+          />
         )}
 
         {viewMode === 'history' && (
