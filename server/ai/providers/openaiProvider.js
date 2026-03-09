@@ -1,4 +1,5 @@
 import { aiReadingJsonSchema, mergeReadingWithBase } from '../../../src/lib/readingContract.js';
+import { logMicrocopyDebug } from '../debugMicrocopy.js';
 import { buildReading, computeElementDistribution, getCardMeaning, getLocalized, getOrientationLabel, readingSlots } from '../../../src/lib/tarotReading.js';
 import { parsePartialJsonObject } from './partialJson.js';
 
@@ -44,7 +45,7 @@ export const buildJsonContract = (language, extraLines = []) => {
   return [...baseLines, ...extraLines].join(' ');
 };
 
-const buildSingleAgentInput = ({ cards, language, question, previousReading }) => {
+export const buildSingleAgentInput = ({ cards, language, question, previousReading }) => {
   const elemental = computeElementDistribution(cards, language);
   const context = {
     language,
@@ -62,10 +63,14 @@ const buildSingleAgentInput = ({ cards, language, question, previousReading }) =
     return [
       '请基于以下 JSON 数据生成一次三张牌解读。',
       '语气保持温和、具体、可反思，并确保 perCard 中每个 slot 只生成一段新的解读 message。',
+      'quote、mantra、followUps 必须贴合当前三张牌与用户问题，像这次牌阵单独长出来的表达，而不是可复用的通用鸡汤。',
+      '具体不等于机械堆砌牌名、牌义关键词或教科书术语；如果引用牌面信息，也要自然地融入句子。',
+      '不要复用 previousReading 的措辞，也避免“答案在你心里”“宇宙会带路”“先回到自己，再决定方向”这类泛化句式。',
       buildJsonContract(language, [
         '必须包含这些字段：summary、quote、perCard、advice、followUps、mantra、safetyNote。',
         'perCard 必须包含 3 项，且每项都要有 slot 和 message，其中 slot 只能是 past、present、future。',
         'advice 返回 2 到 3 条字符串，followUps 返回 2 到 4 条字符串。',
+        'quote 与 mantra 要简短但具体，followUps 要彼此区分并指向当前牌阵的真实张力。',
       ]),
       '',
       JSON.stringify(context, null, 2),
@@ -75,10 +80,14 @@ const buildSingleAgentInput = ({ cards, language, question, previousReading }) =
   return [
     'Create a three-card tarot interpretation from the JSON below.',
     'Keep the tone reflective, specific, and grounded, and generate one fresh message per slot inside perCard.',
+    'Make quote, mantra, and followUps feel born from this exact spread and question rather than reusable inspirational filler.',
+    'Specificity does not mean mechanically stuffing in card names, keywords, or textbook terminology; if card evidence appears, weave it in naturally.',
+    'Do not reuse wording from previousReading, and avoid stock lines such as “the answer is within you,” “the universe will guide you,” or “return to yourself before choosing.”',
     buildJsonContract(language, [
       'Include these exact fields: summary, quote, perCard, advice, followUps, mantra, safetyNote.',
       'perCard must contain exactly 3 items and each item must include slot and message, where slot is one of past, present, future.',
       'advice must contain 2 to 3 strings, and followUps must contain 2 to 4 strings.',
+      'Keep quote and mantra brief but specific, and make the follow-up prompts distinct from one another and anchored in the spread tension.',
     ]),
     '',
     JSON.stringify(context, null, 2),
@@ -811,14 +820,23 @@ export const createOpenAIReading = async ({ cards, language, question, createdAt
     model,
   });
 
-  return {
-    reading: mergeReadingWithBase(baseReading, parsed, {
-      source,
-      model,
-      question,
-      createdAt,
-      orchestration: 'single',
-      agentPipeline: ['interpreter'],
-    }),
-  };
+  const reading = mergeReadingWithBase(baseReading, parsed, {
+    source,
+    model,
+    question,
+    createdAt,
+    orchestration: 'single',
+    agentPipeline: ['interpreter'],
+  });
+
+  logMicrocopyDebug({
+    flow: 'single',
+    stage: 'final',
+    source,
+    model,
+    raw: parsed,
+    final: reading,
+  });
+
+  return { reading };
 };

@@ -152,12 +152,12 @@ minorArcanaData.forEach(suiteInfo => {
       },
       element: suiteInfo.element, // New property for styling
       meaning_upright: {
-        en: `Energy of ${suiteInfo.element} in the realm of ${rank.name}. Focus on ${suiteInfo.suite} themes.`, // Placeholder for brevity in demo, ideally unique
-        zh: `${suiteInfo.suiteZh}的能量体现于${rank.zh}。关注${suiteInfo.suiteZh}的主题` 
+        en: `This ${rank.name} of ${suiteInfo.suite} brings ${suiteInfo.suite} themes to the surface, asking you to notice how that energy is moving.`, // Placeholder for brevity in demo, ideally unique
+        zh: `这张${suiteInfo.suiteZh}${rank.zh}把${suiteInfo.suiteZh}的课题带到你面前，提醒你留意其中的流动与变化。` 
       },
       meaning_reversed: {
-        en: `Blocked or internal energy of ${rank.name} of ${suiteInfo.suite}.`,
-        zh: `${suiteInfo.suiteZh}${rank.zh}的能量受阻或内在化`
+        en: `The energy of this ${rank.name} of ${suiteInfo.suite} turns inward or meets resistance, inviting reflection before action.`,
+        zh: `这张${suiteInfo.suiteZh}${rank.zh}的力量暂时收住了，像是在邀请你先向内看清真正卡住的地方。`
       }
     });
   });

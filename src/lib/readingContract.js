@@ -38,11 +38,69 @@ export const aiReadingJsonSchema = {
   required: ['summary', 'quote', 'perCard', 'advice', 'followUps', 'mantra', 'safetyNote'],
 };
 
+const genericReflectionPatterns = [
+  /答案在你心里/u,
+  /先回到自己/u,
+  /温柔行动/u,
+  /宇宙会带路/u,
+  /顺其自然/u,
+  /相信自己/u,
+  /看清真实/u,
+  /真正想要的是什么/u,
+  /最重要的是什么/u,
+  /return to yourself/i,
+  /answer is within you/i,
+  /what do you really want/i,
+  /what matters most/i,
+  /universe will guide/i,
+  /move gently/i,
+  /trust yourself/i,
+  /go with the flow/i,
+];
+
 const normalizeStringArray = (value, fallback) => (
   Array.isArray(value) && value.length > 0 && value.every((item) => typeof item === 'string' && item.trim())
     ? value
     : fallback
 );
+
+const normalizeComparableText = (value = '') => value.toLowerCase().replace(/[“”"'`]/g, '').trim();
+const compactReflectionText = (value = '') => normalizeComparableText(value).replace(/\s+/g, '');
+
+const buildReflectionAnchors = (reading) => [
+  reading?.dominantElement?.label,
+  ...(Array.isArray(reading?.perCard)
+    ? reading.perCard.map((item) => item.title)
+    : []),
+].filter((item) => typeof item === 'string' && item.trim().length >= 2);
+
+const hasSpreadAnchor = (text, reading) => {
+  const normalizedText = normalizeComparableText(text);
+  return buildReflectionAnchors(reading).some((anchor) => normalizedText.includes(normalizeComparableText(anchor)));
+};
+
+const shouldFallbackReflectionText = (text, baseReading) => {
+  if (typeof text !== 'string' || !text.trim()) {
+    return true;
+  }
+
+  if (genericReflectionPatterns.some((pattern) => pattern.test(text))) {
+    return true;
+  }
+
+  return compactReflectionText(text).length <= 4 && !hasSpreadAnchor(text, baseReading);
+};
+
+const normalizeFollowUps = (value, fallback, baseReading) => {
+  const nextValue = normalizeStringArray(value, fallback);
+
+  if (nextValue === fallback) {
+    return fallback;
+  }
+
+  const filteredValue = nextValue.filter((item) => !shouldFallbackReflectionText(item, baseReading));
+  return filteredValue.length >= 2 ? filteredValue : fallback;
+};
 
 export const mergeReadingWithBase = (baseReading, partialReading = {}, metadata = {}) => {
   if (!baseReading) return null;
@@ -78,9 +136,9 @@ export const mergeReadingWithBase = (baseReading, partialReading = {}, metadata 
     summary: typeof summary === 'string' && summary.trim()
       ? summary
       : baseReading.summary,
-    quote: typeof quote === 'string' && quote.trim()
-      ? quote
-      : baseReading.quote,
+    quote: shouldFallbackReflectionText(quote, baseReading)
+      ? baseReading.quote
+      : quote,
     perCard: baseReading.perCard.map((cardReading) => {
       const override = perCardOverrides.get(cardReading.slot);
       if (!override) return cardReading;
@@ -92,10 +150,10 @@ export const mergeReadingWithBase = (baseReading, partialReading = {}, metadata 
       };
     }),
     advice: normalizeStringArray(advice, baseReading.advice),
-    followUps: normalizeStringArray(followUps, baseReading.followUps),
-    mantra: typeof mantra === 'string' && mantra.trim()
-      ? mantra
-      : baseReading.mantra,
+    followUps: normalizeFollowUps(followUps, baseReading.followUps, baseReading),
+    mantra: shouldFallbackReflectionText(mantra, baseReading)
+      ? baseReading.mantra
+      : mantra,
     safetyNote: typeof safetyNote === 'string' && safetyNote.trim()
       ? safetyNote
       : baseReading.safetyNote,

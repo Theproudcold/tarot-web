@@ -15,8 +15,6 @@ export const buildAgentContext = ({ cards, language, question, previousReading }
     previousReading: previousReading ? {
       summary: previousReading.summary,
       advice: previousReading.advice,
-      followUps: previousReading.followUps,
-      mantra: previousReading.mantra,
     } : null,
   };
 };

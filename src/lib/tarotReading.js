@@ -30,21 +30,6 @@ const slotLabels = {
   future: { en: 'Future / Trend', zh: '未来 / 趋向' },
 };
 
-const quotes = {
-  zh: [
-    '“命运不会替你决定方向，但会在转弯处点亮一盏灯。”',
-    '“当你愿意诚实面对自己，牌面就会从象征变成路标。”',
-    '“真正的答案往往不在远方，而在你已经感受到的那一瞬间。”',
-    '“宇宙并不急于给出结局，它更在意你如何穿越过程。”',
-  ],
-  en: [
-    '“Fate rarely chooses for you; it simply lights the turn ahead.”',
-    '“When you face yourself honestly, symbols become signposts.”',
-    '“The answer is often closer than it seems, already alive in your intuition.”',
-    '“The universe is less concerned with endings than with how you move through change.”',
-  ],
-};
-
 const adviceLibrary = {
   zh: [
     '把这次牌阵里最触动你的一句话写下来，连续观察三天。',
@@ -57,34 +42,6 @@ const adviceLibrary = {
     'Start with one small action that creates stability before making larger choices.',
     'Set aside ten quiet minutes to separate what you truly want from what you feel expected to do.',
     'If emotions are intense, care for your physical rhythm before making a major decision.',
-  ],
-};
-
-const followUpLibrary = {
-  zh: [
-    '如果你只前进一步，最值得先尝试的行动是什么？',
-    '哪张牌最像你现在的真实状态？为什么？',
-    '这组牌提醒你放下的模式，可能是什么？',
-    '如果把未来那张牌当成方向，而不是结果，你会怎么行动？',
-  ],
-  en: [
-    'If you could take only one next step, which action feels most aligned?',
-    'Which card reflects your present truth most clearly, and why?',
-    'What pattern might this spread be asking you to release?',
-    'If you treat the future card as a direction instead of a fixed outcome, what changes?',
-  ],
-};
-
-const mantras = {
-  zh: [
-    '“先回到自己，再决定方向。”',
-    '“看清真实，温柔行动。”',
-    '“答案在行动里，不只在想象里。”',
-  ],
-  en: [
-    '“Return to yourself before choosing the road.”',
-    '“See clearly, then move gently.”',
-    '“The answer lives in action, not only in imagination.”',
   ],
 };
 
@@ -103,6 +60,89 @@ const slotNarratives = {
     past: (title, meaning, orientationLabel) => `${title}${orientationLabel ? ` (${orientationLabel})` : ''} reveals the background energy you have been carrying, centered on ${meaning}. It shows how earlier experiences still shape the way you interpret the present.`,
     present: (title, meaning, orientationLabel) => `${title}${orientationLabel ? ` (${orientationLabel})` : ''} highlights ${meaning} as the core of your current situation. This card asks for awareness and choice rather than automatic reaction.`,
     future: (title, meaning, orientationLabel) => `${title}${orientationLabel ? ` (${orientationLabel})` : ''} places the emerging trend in the realm of ${meaning}. Treat it less as a fixed prediction and more as a direction that is beginning to form.`,
+  },
+};
+
+const quoteBuilders = {
+  zh: [
+    ({ past, present, future }) => `“从${past.title}的${past.keyword}走到${present.title}的${present.keyword}，你真正要学的是如何回应${future.title}带来的${future.keyword}。”`,
+    ({ present, question }) => question
+      ? `“围绕${question}，${present.title}提醒你先辨认${present.keyword}，再决定要不要更进一步。”`
+      : `“${present.title}提醒你：先辨认${present.keyword}，再决定要不要更进一步。”`,
+    ({ past, future }) => `“当${past.title}留下的${past.keyword}仍在回响时，${future.title}正在把方向推向${future.keyword}。”`,
+    ({ dominantElement, present }) => `“${dominantElement.label}元素的力量，不是催你着急，而是要你更诚实地面对${present.keyword}。”`,
+    ({ past, future }) => `“放下${past.keyword}里的旧反应，才有空间接住${future.title}所带来的新趋势。”`,
+  ],
+  en: [
+    ({ past, present, future }) => `“From ${past.title}'s ${past.keyword} into ${present.title}'s ${present.keyword}, your real lesson is how to answer the ${future.keyword} carried by ${future.title}.”`,
+    ({ present, question }) => question
+      ? `“Around ${question}, ${present.title} asks you to name ${present.keyword} clearly before deciding how far to move.”`
+      : `“${present.title} asks you to name ${present.keyword} clearly before deciding how far to move.”`,
+    ({ past, future }) => `“While ${past.title} keeps echoing with ${past.keyword}, ${future.title} is already turning the path toward ${future.keyword}.”`,
+    ({ dominantElement, present }) => `“The pull of ${dominantElement.label.toLowerCase()} is not asking for haste; it is asking for honesty about ${present.keyword}.”`,
+    ({ past, future }) => `“Release the old reflex inside ${past.keyword}, and you make room for the direction forming through ${future.title}.”`,
+  ],
+};
+
+const mantraBuilders = {
+  zh: [
+    ({ present }) => `“先看清${present.keyword}，再决定下一步。”`,
+    ({ future }) => `“稳住自己，回应${future.keyword}。”`,
+    ({ dominantElement, past }) => `“让${dominantElement.label}落地，不再被${past.keyword}牵着走。”`,
+    ({ present, future }) => `“把${present.keyword}说清，也把${future.keyword}看清。”`,
+    ({ future }) => `“朝着${future.keyword}的方向，慢一步也算前进。”`,
+  ],
+  en: [
+    ({ present }) => `“Name ${present.keyword}, then choose the next step.”`,
+    ({ future }) => `“Steady yourself and answer ${future.keyword}.”`,
+    ({ dominantElement, past }) => `“Ground ${dominantElement.label.toLowerCase()} and stop moving from ${past.keyword} alone.”`,
+    ({ present, future }) => `“Clarify ${present.keyword}, and make room for ${future.keyword}.”`,
+    ({ future }) => `“Move toward ${future.keyword}, even if the pace is slow.”`,
+  ],
+};
+
+const followUpBuilders = {
+  zh: {
+    past: [
+      ({ past }) => `过去位的${past.title}，让你还在重复哪种与“${past.keyword}”有关的反应？`,
+      ({ past }) => `如果把${past.title}看成根源提醒，哪段关于“${past.keyword}”的旧经验最该被重新理解？`,
+      ({ past, present }) => `过去位的${past.keyword}，现在是怎样影响你面对${present.title}时的判断？`,
+    ],
+    present: [
+      ({ present }) => `现在位的${present.title}提醒你，眼下最该正视的“${present.keyword}”是什么？`,
+      ({ present, question }) => question
+        ? `围绕${question}，${present.title}最想让你暂停确认的“${present.keyword}”是什么？`
+        : `此刻的${present.title}，最想让你暂停确认的“${present.keyword}”是什么？`,
+      ({ present, dominantElement }) => `${present.title}与${dominantElement.label}元素一起出现时，你最需要如何把“${present.keyword}”落到现实里？`,
+    ],
+    future: [
+      ({ future }) => `如果未来位的${future.title}不是结果而是趋势，你今天能做什么来回应“${future.keyword}”？`,
+      ({ future, question }) => question
+        ? `面对${question}，${future.title}所指向的“${future.keyword}”更像提醒你提前准备什么？`
+        : `${future.title}所指向的“${future.keyword}”，更像提醒你提前准备什么？`,
+      ({ future, past }) => `为了不再被${past.keyword}拉回旧轨道，你可以如何迎向${future.title}带来的“${future.keyword}”？`,
+    ],
+  },
+  en: {
+    past: [
+      ({ past }) => `What reaction tied to “${past.keyword}” are you still repeating because of ${past.title} in the past position?`,
+      ({ past }) => `If ${past.title} is a root reminder, which old experience around “${past.keyword}” needs a new interpretation?`,
+      ({ past, present }) => `How is the ${past.keyword} in your past still shaping the way you respond to ${present.title} now?`,
+    ],
+    present: [
+      ({ present }) => `What part of “${present.keyword}” most needs your honest attention in ${present.title} right now?`,
+      ({ present, question }) => question
+        ? `Around ${question}, what does ${present.title} want you to pause and name inside “${present.keyword}”?`
+        : `What does ${present.title} want you to pause and name inside “${present.keyword}”?`,
+      ({ present, dominantElement }) => `With ${present.title} appearing alongside ${dominantElement.label.toLowerCase()}, how can you ground “${present.keyword}” in real action?`,
+    ],
+    future: [
+      ({ future }) => `If ${future.title} is a direction rather than a verdict, what can you do today to answer “${future.keyword}”?`,
+      ({ future, question }) => question
+        ? `In relation to ${question}, what preparation does ${future.title} ask for through “${future.keyword}”?`
+        : `What preparation does ${future.title} ask for through “${future.keyword}”?`,
+      ({ future, past }) => `What would help you meet the “${future.keyword}” of ${future.title} without slipping back into ${past.keyword}?`,
+    ],
   },
 };
 
@@ -132,6 +172,17 @@ export const serializeCards = (cards = []) => cards.map((card) => ({
 }));
 
 const pickBySeed = (items, seed, offset = 0) => items[(seed + offset) % items.length];
+
+const normalizePromptQuestion = (question = '', language = 'en') => {
+  const trimmed = typeof question === 'string' ? question.trim() : '';
+  if (!trimmed) {
+    return '';
+  }
+
+  return language === 'zh'
+    ? `“${trimmed.replace(/[。！？!?]+$/u, '')}”`
+    : `“${trimmed.replace(/[.?!]+$/u, '')}”`;
+};
 
 export const computeElementDistribution = (cards = [], language = 'en') => {
   const counts = { Fire: 0, Water: 0, Air: 0, Earth: 0 };
@@ -194,6 +245,34 @@ const buildPerCardReading = (slot, card, language = 'en') => {
   };
 };
 
+const buildReflectionContext = ({ cards, language, question, dominantElement }) => {
+  const [past, present, future] = cards.map((card, index) => buildPerCardReading(readingSlots[index], card, language));
+
+  return {
+    past,
+    present,
+    future,
+    dominantElement,
+    question: normalizePromptQuestion(question, language),
+  };
+};
+
+const buildQuote = ({ language, seed, reflectionContext }) => {
+  const builder = pickBySeed(quoteBuilders[language], seed);
+  return builder(reflectionContext);
+};
+
+const buildMantra = ({ language, seed, reflectionContext }) => {
+  const builder = pickBySeed(mantraBuilders[language], seed, 1);
+  return builder(reflectionContext);
+};
+
+const buildFollowUps = ({ language, seed, reflectionContext }) => [
+  pickBySeed(followUpBuilders[language].past, seed)(reflectionContext),
+  pickBySeed(followUpBuilders[language].present, seed, 1)(reflectionContext),
+  pickBySeed(followUpBuilders[language].future, seed, 2)(reflectionContext),
+];
+
 export const buildReadingSkeleton = (cards = [], options = {}) => {
   const {
     language = 'en',
@@ -245,6 +324,12 @@ export const buildReading = (cards = [], options = {}) => {
   ), 0);
 
   const elemental = computeElementDistribution(cards, language);
+  const reflectionContext = buildReflectionContext({
+    cards,
+    language,
+    question,
+    dominantElement: elemental.dominantElement,
+  });
 
   return {
     version: '1.0',
@@ -254,7 +339,7 @@ export const buildReading = (cards = [], options = {}) => {
     question,
     createdAt,
     summary: buildSummary({ cards, language, question, dominantElement: elemental.dominantElement }),
-    quote: pickBySeed(quotes[language], seed),
+    quote: buildQuote({ language, seed, reflectionContext }),
     dominantElement: elemental.dominantElement,
     elementDistribution: elemental.distribution,
     perCard: readingSlots.map((slot, index) => buildPerCardReading(slot, cards[index], language)),
@@ -262,12 +347,8 @@ export const buildReading = (cards = [], options = {}) => {
       pickBySeed(adviceLibrary[language], seed),
       pickBySeed(adviceLibrary[language], seed, 2),
     ],
-    followUps: [
-      pickBySeed(followUpLibrary[language], seed),
-      pickBySeed(followUpLibrary[language], seed, 1),
-      pickBySeed(followUpLibrary[language], seed, 2),
-    ],
-    mantra: pickBySeed(mantras[language], seed),
+    followUps: buildFollowUps({ language, seed, reflectionContext }),
+    mantra: buildMantra({ language, seed, reflectionContext }),
     safetyNote: safetyNotes[language],
   };
 };
