@@ -16,6 +16,18 @@ import { mergeReadingWithBase } from './lib/readingContract.js';
 import { readLanguageFromUrl, readViewModeFromUrl, updateUrlParams } from './lib/urlState.js';
 
 const phaseStageOrder = ['draft', 'review', 'finalize', 'fallback'];
+const repositoryUrl = 'https://github.com/Theproudcold/tarot-web';
+
+const GitHubIcon = ({ className = 'h-5 w-5' }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    aria-hidden="true"
+    className={className}
+  >
+    <path d="M12 2C6.48 2 2 6.58 2 12.23c0 4.52 2.87 8.35 6.84 9.7.5.1.66-.22.66-.48 0-.24-.01-1.03-.01-1.87-2.78.62-3.37-1.21-3.37-1.21-.46-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.63.07-.63 1 .08 1.53 1.06 1.53 1.06.9 1.57 2.35 1.12 2.92.86.09-.67.35-1.12.64-1.38-2.22-.26-4.56-1.14-4.56-5.08 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.31.1-2.73 0 0 .84-.27 2.75 1.05A9.3 9.3 0 0 1 12 6.84c.85 0 1.71.12 2.51.35 1.91-1.32 2.75-1.05 2.75-1.05.55 1.42.2 2.47.1 2.73.64.72 1.03 1.63 1.03 2.75 0 3.95-2.34 4.82-4.57 5.08.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.17.59.67.48A10.25 10.25 0 0 0 22 12.23C22 6.58 17.52 2 12 2Z" />
+  </svg>
+);
 
 const createInitialPhases = (orchestration) => (
   orchestration === 'multi'
@@ -329,13 +341,26 @@ function App() {
 
       <header className="border-b border-tarot-gold/20 bg-black/20 p-4 backdrop-blur-sm md:p-8">
         <div className="flex flex-col gap-4 md:gap-6">
-          <div>
-            <h1 className="m-0 font-serif text-3xl text-tarot-gold drop-shadow-[0_0_10px_rgba(212,175,55,0.5)] md:text-5xl">
-              {t('title')}
-            </h1>
-            <p className="mt-2 text-sm italic text-gray-300 opacity-80 md:text-base">
-              {t('subtitle')}
-            </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="m-0 font-serif text-3xl text-tarot-gold drop-shadow-[0_0_10px_rgba(212,175,55,0.5)] md:text-5xl">
+                {t('title')}
+              </h1>
+              <p className="mt-2 text-sm italic text-gray-300 opacity-80 md:text-base">
+                {t('subtitle')}
+              </p>
+            </div>
+
+            <a
+              href={repositoryUrl}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="GitHub"
+              title="GitHub"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-gray-300 transition-colors hover:border-tarot-gold/40 hover:text-tarot-gold"
+            >
+              <GitHubIcon />
+            </a>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6">

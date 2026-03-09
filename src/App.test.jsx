@@ -102,4 +102,14 @@ describe('App deep linking', () => {
     fireEvent.click(screen.getByRole('button', { name: '中文' }));
     expect(window.location.search).toContain('lang=zh');
   });
+
+  it('renders a GitHub link in the header', () => {
+    render(<App />);
+
+    const githubLink = screen.getByRole('link', { name: 'GitHub' });
+
+    expect(githubLink).toHaveAttribute('href', 'https://github.com/Theproudcold/tarot-web');
+    expect(githubLink).toHaveAttribute('target', '_blank');
+    expect(githubLink).toHaveAttribute('rel', 'noreferrer');
+  });
 });
