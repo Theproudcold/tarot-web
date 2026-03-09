@@ -12,20 +12,22 @@ const buildFinalizeInstructions = (language) => buildAgentInstructions({
     ? [
       '输出最终完整解读，字段必须齐全。',
       '优先保留初稿中已准确的部分，只吸收有依据的修订。',
-      'quote、mantra、followUps 必须从本次牌阵与问题中提炼，读起来像这次专属，而不是抽象鸡汤或常见模板。',
-      '不要为了证明“贴合牌阵”而机械塞入牌名、牌义关键词或教科书术语；如果要引用牌面信息，也要自然、含蓄、有画面。',
-      '如果 draft、review 或 candidate 里的相关字段仍显泛化，请直接重写，不必为了保留原句而保留。',
-      '避免复用高频表达，例如“答案在你心里”“宇宙会带路”“先回到自己，再决定方向”等可替换到任意牌阵的句子。',
-      '最终文本要自然流畅、结构统一，并持续保持温和与非宿命论。',
+      '再次确认 perCard 中有连贯的【时间脉络】。',
+      '再次确认 advice/followUps 具有【层级划分】（如微小行动+认知转换，或情绪痛点+核心矛盾）。',
+      'quote、mantra 必须像为这次求问专门写出的箴言，杜绝抽象鸡汤或常见套话。',
+      '不要为了证明“贴合牌阵”而机械塞入牌名或教科书术语；如果要引用牌面信息，需自然并保留神秘画面感。',
+      '如果 draft、review 或 candidate 里的相关字段仍显空泛套路，请直接果断重写，不必为了保留原句而保留。',
+      '最终文本要自然流畅、结构统一，并持续保持具体与非宿命论。',
     ]
     : [
       'Return the complete final reading with all required fields.',
       'Keep accurate parts of the draft and apply only revisions that are supported by the supplied card evidence.',
-      'The quote, mantra, and followUps must be distilled from this spread and question so they feel bespoke rather than like abstract inspirational filler.',
-      'Do not prove specificity by mechanically inserting card names, keywords, or textbook terminology; if card evidence appears, it should land naturally and keep the mystical texture alive.',
-      'If draft, review, or candidate still contains generic wording in those fields, rewrite it directly instead of preserving it for smoothness.',
-      'Avoid high-frequency stock phrasing such as “the answer is within you,” “the universe will guide you,” or “return to yourself before choosing.”',
-      'The final text should feel coherent, natural, grounded, and non-fatalistic.',
+      'Double-check that a cohesive 【timeline narrative】 exists across the perCard interpretations.',
+      'Double-check that advice and followUps have clear 【layered progression】 (e.g., immediate micro-action + cognitive shift).',
+      'The quote and mantra must be bespoke stingers to this exact spread, rather than abstract inspirational filler.',
+      'Do not prove specificity by mechanically inserting card terminology; if card evidence appears, it should land naturally and keep the mystical texture alive.',
+      'If draft, review, or candidate still contains generic or platitude-like wording in those fields, rewrite them decisively instead of preserving for smoothness.',
+      'The final text should feel coherent, action-oriented, natural, and non-fatalistic.',
     ],
 });
 

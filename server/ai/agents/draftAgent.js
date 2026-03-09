@@ -10,20 +10,22 @@ const buildDraftInstructions = (language) => buildAgentInstructions({
   contractLines: language === 'zh'
     ? [
       '输出用户可直接阅读的完整初稿。',
-      '每个结论都必须能从给定牌义、正逆位、位置或元素分布中找到依据。',
-      'quote、mantra、followUps 必须紧扣当前这组三张牌与用户问题，像是为这次牌阵单独写下，而不是能套用到任意解读里的套话。',
-      '具体不等于机械堆砌牌名、牌义关键词或教科书术语；如果引用牌面信息，也要自然地融入句子，保留神秘感与画面感。',
-      '避免高频空话或宇宙/命运类鸡汤，例如“答案在你心里”“先回到自己，再决定方向”“温柔行动”等泛化表达。',
-      '如存在 previousReading，只把它当连续对话背景，不要沿用其中的措辞来生成新的 quote、mantra 或 followUps。',
+      '在 perCard 中构建连贯的【时间脉络】：梳理过去与现在的逻辑关系，并指出当前选择如何影响未来。',
+      '请使用具体的牌义意象来构建 advice（例如指出“把目光放在更远的市场或下一个行动节点上”，而非泛化表达“先回到自己”）。',
+      'advice 层级：至少提供一条【立刻能做的微小行动】和一条【认知视角的转换】。',
+      'followUps 问题层级：第一问探索显性的情绪阻碍，第二问直指问题的核心矛盾。',
+      'quote 和 mantra 要精确切中痛点，像是专门为这次占卜写的箴言，杜绝可复用的空泛鸡汤。',
+      '如存在 previousReading，只把它当连续对话背景，不要沿用其中的措辞。',
       '保持温和、具体、可执行，不要使用宿命式语气。',
     ]
     : [
       'Return a complete user-facing first draft.',
-      'Every conclusion must be grounded in the provided card meanings, orientation, spread position, or element distribution.',
-      'Make quote, mantra, and followUps feel bespoke to this spread and question rather than interchangeable with any generic reading.',
-      'Specificity does not mean mechanically stuffing in card names, keywords, or textbook terminology; if you reference card evidence, weave it in naturally and keep the mystique intact.',
-      'Avoid stock cosmic language or repeated self-help phrasing such as “the answer is within you,” “return to yourself,” or other interchangeable platitudes.',
-      'If previousReading exists, treat it only as continuity context and do not reuse its wording for the new quote, mantra, or followUps.',
+      'Build a cohesive 【timeline narrative】 in perCard: illustrate the logical relation between Past and Present, and how the Present choice impacts the Future.',
+      'Use specific card imagery for advice (e.g., specify "focus on distant markets" instead of a generic "return to yourself").',
+      'advice layers: Include at least one immediate 【micro-action】 and one 【cognitive shift】.',
+      'followUps progression: Start with surfacing explicit emotional blocks, then probe the core contradiction.',
+      'Make quote and mantra highly bespoke stingers to this exact reading rather than interchangeable inspirational texts.',
+      'If previousReading exists, treat it only as continuity context and do not reuse its wording.',
       'Keep the tone specific, gentle, and actionable without sounding fatalistic.',
     ],
 });
@@ -32,13 +34,13 @@ const buildDraftInput = (context) => buildAgentInput({
   introLines: context.language === 'zh'
     ? [
       '请根据下面的塔罗上下文起草完整解读。',
-      '优先做到：结构完整、每张牌都有新信息、总结与建议彼此一致。',
-      '尤其让星辰低语、锚定语和反思提问体现这次牌阵的独特张力，不要写成任何牌阵都能复用的句子。',
+      '优先做到：连贯的时间脉络演绎、有卡牌图像依据的具体建议（避免空话）。',
+      '如果 elementDistribution 存在明显的元素冲突或单极化危险，请在 summary 处重点提示。',
     ]
     : [
       'Draft a complete tarot reading from the context below.',
-      'Prioritize completeness, grounded per-card insight, and consistency between summary and advice.',
-      'Make the quote, mantra, and follow-up prompts express the specific tension of this spread rather than reusable generic lines.',
+      'Prioritize: a cohesive timeline narrative, and specific advice grounded in card imagery (avoid platitudes).',
+      'If the elementDistribution shows severe conflict or single-element imbalance, highlight it in the summary.',
     ],
   payload: context,
 });

@@ -48,6 +48,12 @@ const genericReflectionPatterns = [
   /看清真实/u,
   /真正想要的是什么/u,
   /最重要的是什么/u,
+  /倾听内心的声音/u,
+  /找到内在的力量/u,
+  /一切都是最好的安排/u,
+  /命运的指引/u,
+  /保持觉察/u,
+  /遵循你的直觉/u,
   /return to yourself/i,
   /answer is within you/i,
   /what do you really want/i,
@@ -56,6 +62,11 @@ const genericReflectionPatterns = [
   /move gently/i,
   /trust yourself/i,
   /go with the flow/i,
+  /listen to your inner voice/i,
+  /find your inner strength/i,
+  /everything happens for a reason/i,
+  /trust the process/i,
+  /follow your intuition/i,
 ];
 
 const normalizeStringArray = (value, fallback) => (

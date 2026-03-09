@@ -31,10 +31,10 @@ export const buildCardContext = (cards, language) => readingSlots.map((slot, ind
 
 export const buildGroundedInstructions = (language) => {
   if (language === 'zh') {
-    return '你是一个谨慎、温和、擅长结构化表达的塔罗解读助手。只基于提供的牌义与问题进行反思式分析，不做宿命论、医疗、法律、财务判断，不夸大确定性。';
+    return '你是一个专注具体行动、擅长连贯叙事的塔罗解读专家。请基于牌义展开深度分析，并体现牌与牌之间的演化脉络。避开绝对命运论的陈词滥调；不做医疗、法律、财务干预。';
   }
 
-  return 'You are a careful, grounded tarot interpretation assistant. Base the reading only on the supplied card meanings and the user question. Avoid fatalism and avoid medical, legal, or financial guidance.';
+  return 'You are an action-oriented, narratively cohesive tarot expert. Draw deep connections between the cards, illustrating the evolution from past to future. Avoid fatalistic clichés and avoid medical, legal, or financial intervention.';
 };
 
 export const buildJsonContract = (language, extraLines = []) => {
@@ -62,15 +62,16 @@ export const buildSingleAgentInput = ({ cards, language, question, previousReadi
   if (language === 'zh') {
     return [
       '请基于以下 JSON 数据生成一次三张牌解读。',
-      '语气保持温和、具体、可反思，并确保 perCard 中每个 slot 只生成一段新的解读 message。',
-      'quote、mantra、followUps 必须贴合当前三张牌与用户问题，像这次牌阵单独长出来的表达，而不是可复用的通用鸡汤。',
-      '具体不等于机械堆砌牌名、牌义关键词或教科书术语；如果引用牌面信息，也要自然地融入句子。',
-      '不要复用 previousReading 的措辞，也避免“答案在你心里”“宇宙会带路”“先回到自己，再决定方向”这类泛化句式。',
+      '在解读时，请阐述连贯的【时间脉络】：过去（Past）是如何导致现在（Present）的局面的？而现在的抉择将如何塑造未来（Future）的趋势？在 perCard 解释中体现这种因果演变。',
+      '如果 elementDistribution 数据中存在明显的元素冲突或失衡，请在 summary 中点出；如果是单一元素主导，指出该元素的过度发挥可能带来的风险。',
+      '请使用具体的牌义意象来构建建议（例如针对权杖三，指出“把目光放在更远的市场或下一个行动节点上”，而非泛化表达“先回到自己”）。',
+      'advice 层级：至少提供一条【立刻能做的微小行动】和一条【认知视角的转换】。',
+      'followUps 问题层级：第一问探索显性的情绪阻碍，第二问直指问题的核心矛盾。',
+      'quote 和 mantra 要精确切中痛点，像是专门为这次占卜写的箴言，杜绝可复用的空泛鸡汤。',
       buildJsonContract(language, [
         '必须包含这些字段：summary、quote、perCard、advice、followUps、mantra、safetyNote。',
         'perCard 必须包含 3 项，且每项都要有 slot 和 message，其中 slot 只能是 past、present、future。',
         'advice 返回 2 到 3 条字符串，followUps 返回 2 到 4 条字符串。',
-        'quote 与 mantra 要简短但具体，followUps 要彼此区分并指向当前牌阵的真实张力。',
       ]),
       '',
       JSON.stringify(context, null, 2),
@@ -79,15 +80,16 @@ export const buildSingleAgentInput = ({ cards, language, question, previousReadi
 
   return [
     'Create a three-card tarot interpretation from the JSON below.',
-    'Keep the tone reflective, specific, and grounded, and generate one fresh message per slot inside perCard.',
-    'Make quote, mantra, and followUps feel born from this exact spread and question rather than reusable inspirational filler.',
-    'Specificity does not mean mechanically stuffing in card names, keywords, or textbook terminology; if card evidence appears, weave it in naturally.',
-    'Do not reuse wording from previousReading, and avoid stock lines such as “the answer is within you,” “the universe will guide you,” or “return to yourself before choosing.”',
+    'Illustrate a cohesive 【timeline narrative】: How did the Past lead to the Present? How is the current choice shaping the Future trend? Build this evolution into the perCard messages.',
+    'Address the elementDistribution: pinpoint internal tensions or conflicts, or highlight the risks of a single dominant element.',
+    'Use specific card imagery for guidance (e.g., for Three of Wands, specify "focus on distant markets or the next action milestone" instead of offering a generic "seek within").',
+    'advice layers: Include at least one immediate 【micro-action】 and one 【cognitive shift】.',
+    'followUps progression: Start with surfacing explicit emotional blocks, then probe the core contradiction.',
+    'quote and mantra must be highly specific, bespoke stingers to this exact reading rather than interchangeable inspirational texts.',
     buildJsonContract(language, [
       'Include these exact fields: summary, quote, perCard, advice, followUps, mantra, safetyNote.',
       'perCard must contain exactly 3 items and each item must include slot and message, where slot is one of past, present, future.',
       'advice must contain 2 to 3 strings, and followUps must contain 2 to 4 strings.',
-      'Keep quote and mantra brief but specific, and make the follow-up prompts distinct from one another and anchored in the spread tension.',
     ]),
     '',
     JSON.stringify(context, null, 2),
