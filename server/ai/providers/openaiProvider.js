@@ -71,7 +71,8 @@ export const buildSingleAgentInput = ({ cards, language, question, previousReadi
       buildJsonContract(language, [
         '必须包含这些字段：summary、quote、perCard、advice、followUps、mantra、safetyNote。',
         'perCard 必须包含 3 项，且每项都要有 slot 和 message，其中 slot 只能是 past、present、future。',
-        'advice 返回 2 到 3 条字符串，followUps 返回 2 到 4 条字符串。',
+        'advice 必须是一个 JSON 数组（Array of Strings），包含 2 到 3 条行动建议。',
+        'followUps 必须是一个 JSON 数组（Array of Strings），包含 2 到 4 条反思提问。',
       ]),
       '',
       JSON.stringify(context, null, 2),
@@ -89,7 +90,8 @@ export const buildSingleAgentInput = ({ cards, language, question, previousReadi
     buildJsonContract(language, [
       'Include these exact fields: summary, quote, perCard, advice, followUps, mantra, safetyNote.',
       'perCard must contain exactly 3 items and each item must include slot and message, where slot is one of past, present, future.',
-      'advice must contain 2 to 3 strings, and followUps must contain 2 to 4 strings.',
+      'advice must be a JSON Array of Strings containing 2 to 3 actions.',
+      'followUps must be a JSON Array of Strings containing 2 to 4 reflection questions.',
     ]),
     '',
     JSON.stringify(context, null, 2),

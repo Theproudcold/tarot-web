@@ -8,8 +8,6 @@ export const aiReadingJsonSchema = {
     quote: { type: 'string' },
     perCard: {
       type: 'array',
-      minItems: 3,
-      maxItems: 3,
       items: {
         type: 'object',
         additionalProperties: false,
@@ -22,14 +20,10 @@ export const aiReadingJsonSchema = {
     },
     advice: {
       type: 'array',
-      minItems: 2,
-      maxItems: 3,
       items: { type: 'string' },
     },
     followUps: {
       type: 'array',
-      minItems: 2,
-      maxItems: 4,
       items: { type: 'string' },
     },
     mantra: { type: 'string' },
