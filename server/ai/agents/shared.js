@@ -19,11 +19,13 @@ export const buildAgentContext = ({ cards, language, question, previousReading }
   };
 };
 
-export const buildAgentInstructions = ({ language, roleLine, contractLines = [] }) => [
+export const buildAgentInstructions = ({ language, roleLine, contractLines = [], fewShotBlock = '', reasoningGuidance = '' }) => [
   buildGroundedInstructions(language),
   roleLine,
+  ...(reasoningGuidance ? [reasoningGuidance] : []),
   buildJsonContract(language, contractLines),
-].join(' ');
+  ...(fewShotBlock ? [fewShotBlock] : []),
+].join('\n\n');
 
 export const buildAgentInput = ({ introLines, payload }) => [
   ...introLines,

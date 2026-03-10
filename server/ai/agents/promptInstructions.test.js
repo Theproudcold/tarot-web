@@ -73,30 +73,63 @@ describe('agent prompt instructions', () => {
     mockedProvider.streamStructuredOpenAITask.mockClear();
   });
 
-  it('tells draft agent to keep quote, mantra, and followUps spread-specific', async () => {
+  it('includes enhanced role identity with quality standard', async () => {
     await runDraftAgent({ context, aiConfig: {} });
 
     const taskConfig = mockedProvider.runStructuredOpenAITask.mock.calls[0][0];
 
-    expect(taskConfig.instructions).toContain('quote、mantra、followUps');
-    expect(taskConfig.instructions).toContain('套话');
+    // 验证角色身份增强
+    expect(taskConfig.instructions).toContain('可替换性测试');
+    expect(taskConfig.instructions).toContain('身份');
+    expect(taskConfig.instructions).toContain('解读哲学');
+  });
+
+  it('tells draft agent to keep quote, mantra, and followUps spread-specific with CoT guidance', async () => {
+    await runDraftAgent({ context, aiConfig: {} });
+
+    const taskConfig = mockedProvider.runStructuredOpenAITask.mock.calls[0][0];
+
+    // 验证反套话指令
+    expect(taskConfig.instructions).toContain('可替换性测试');
     expect(taskConfig.instructions).toContain('机械堆砌牌名');
-    expect(taskConfig.input).toContain('星辰低语');
+
+    // 验证 CoT 推理引导
+    expect(taskConfig.instructions).toContain('内部推理流程');
+    expect(taskConfig.instructions).toContain('元素张力');
+    expect(taskConfig.instructions).toContain('锚点');
+
+    // 验证 Few-shot 对照示例
+    expect(taskConfig.instructions).toContain('不合格');
+    expect(taskConfig.instructions).toContain('合格');
+    expect(taskConfig.instructions).toContain('风格参考');
+
+    // 验证 input 中的独特张力提示
     expect(taskConfig.input).toContain('独特张力');
   });
 
-  it('tells review agent to flag generic template lines', async () => {
+  it('tells review agent to flag generic template lines with scoring dimensions', async () => {
     await runReviewAgent({ context, draft, aiConfig: {} });
 
     const taskConfig = mockedProvider.runStructuredOpenAITask.mock.calls[0][0];
 
+    // 验证审查维度
+    expect(taskConfig.instructions).toContain('叙事连贯性');
+    expect(taskConfig.instructions).toContain('牌面锚定度');
+    expect(taskConfig.instructions).toContain('行动可执行性');
+    expect(taskConfig.instructions).toContain('反套话检测');
+
+    // 验证可替换性测试
+    expect(taskConfig.instructions).toContain('可替换性测试');
     expect(taskConfig.instructions).toContain('模板句');
     expect(taskConfig.instructions).toContain('教科书术语');
     expect(taskConfig.instructions).toContain('revisionPlan');
+
+    // 验证 input 中的审查提示
     expect(taskConfig.input).toContain('不要为了求新而改');
+    expect(taskConfig.input).toContain('可替换性测试');
   });
 
-  it('tells finalize agent to rewrite templated quote and mantra fields', async () => {
+  it('tells finalize agent to rewrite templated quote and mantra fields with contrast examples', async () => {
     await runFinalizeAgent({
       context,
       draft,
@@ -107,9 +140,20 @@ describe('agent prompt instructions', () => {
 
     const taskConfig = mockedProvider.runStructuredOpenAITask.mock.calls[0][0];
 
+    // 验证 Few-shot 反面对照注入
+    expect(taskConfig.instructions).toContain('不合格');
+    expect(taskConfig.instructions).toContain('合格');
+
+    // 验证反套话指令
     expect(taskConfig.instructions).toContain('这次专属');
-    expect(taskConfig.instructions).toContain('机械塞入牌名');
     expect(taskConfig.instructions).toContain('答案在你心里');
-    expect(taskConfig.input).toContain('模板句');
+    expect(taskConfig.instructions).toContain('机械塞入牌名');
+
+    // 验证终极自检
+    expect(taskConfig.instructions).toContain('可替换性测试');
+
+    // 验证 input 中的对照提示
+    expect(taskConfig.input).toContain('不合格 vs 合格');
+    expect(taskConfig.input).toContain('可替换性测试');
   });
 });
