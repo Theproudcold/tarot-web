@@ -1,81 +1,75 @@
 # Mystic Tarot
 
-> Live demo: `https://tarot.hypoy.cn`  
-> English documentation / [查看中文文档](./README.md)
+> Live: [tarot.hypoy.cn](https://tarot.hypoy.cn)　|　[中文文档](./README.md)
 
-A modern Tarot reading app built with `React` + `Vite`, featuring bilingual card data, structured AI interpretations, browser-based AI configuration, and a lightweight multi-agent backend with real-time `SSE` updates.
+A modern Tarot reading app built with `React` + `Vite`, featuring bilingual card data, structured AI interpretations, in-browser model configuration, and a lightweight multi-agent backend with real-time `SSE` progress streaming.
+
+![Mystic Tarot](./docs/cover.png)
 
 ## Preview
 
 ![Mystic Tarot overview](./docs/image.webp)
 
-> This overview image shows the overall UI style across the draw flow, reading view, right-side engine settings, gallery, history, and runtime entry.
+> The overall UI across the draw flow, reading view, engine settings panel, card gallery, history, and runtime status entry.
 
 ## Overview
 
-Mystic Tarot is designed to make the full reading pipeline visible and trustworthy instead of simply generating a vague mystical paragraph.
+Mystic Tarot is designed to make the full reading pipeline transparent and verifiable — not just a vague mystical paragraph:
 
-- The frontend supports card drawing, spread display, history, and bilingual UI.
-- The backend hydrates incoming card `id`s into full tarot context before sending them to AI.
-- The app supports both official `OpenAI` endpoints and `OpenAI-compatible` third-party providers.
-- It supports `single` mode and `multi` three-stage orchestration.
-- The reading flow is streamed via `SSE` with `meta / phase / partial / complete / error` events.
-- Failures, overloads, and fallbacks are shown explicitly instead of being hidden behind fake success states.
+- **Frontend**: card drawing, spread display, history, and bilingual Chinese/English UI.
+- **Backend**: hydrates card `id`s into full tarot context, then streams `meta / phase / partial / complete / error` events via `SSE`.
+- Works with both official `OpenAI` endpoints and any `OpenAI-compatible` third-party provider.
+- Two orchestration modes: `single` (one-shot) and `multi` (three-stage pipeline).
+- Failures, timeouts, and overloads are shown explicitly — no silent degradation disguised as success.
 
 ## Highlights
 
-- Full `78-card` tarot dataset with Chinese and English localization.
-- Three-card timeline spread: `Past / Present / Future`.
-- Structured reading output: `summary / quote / perCard / advice / followUps / mantra / safetyNote`.
-- In-browser AI settings: `Base URL / API Key / Model / Provider Label / Orchestration`.
-- Compatible with third-party OpenAI-style providers.
-- Three-stage pipeline: `Card draft / Reading review / Final reading`.
-- Real-time progress timeline and stage logs.
-- The gallery now supports `search / grouped browsing / quick jump / favorites / compare / recent views`.
-- Automatic fallback to server or local reading when AI is unavailable.
+- **Full 78-card tarot dataset** in Chinese and English, with search, grouping, sorting, favorites, and side-by-side comparison.
+- **Three-card timeline spread**: Past / Present / Future.
+- **Structured output**: `summary / quote / perCard / advice / followUps / mantra / safetyNote`.
+- **In-browser AI settings**: `Base URL / API Key / Model / Provider Label / Orchestration`, stored only in `localStorage`.
+- **Three-stage pipeline**: Card Draft → Reading Review → Final Reading, with native provider streaming in the final stage.
+- **Real-time progress timeline**: SSE pushes phase changes and partial snapshots — no more guessing when results arrive.
+- **Multi-level fallback**: multi fails → single → mock → local fallback, ensuring the page never deadlocks.
 
 ## Card Gallery
 
-The gallery is now designed as a reference workspace instead of a simple 78-card wall:
+The gallery is designed as a long-term reference workspace, not just a 78-card wall:
 
-- Search and filter by `name / arcana / suit / element`.
-- Sort by `suit / name / element / favorites first / id`.
-- Switch between `grid view` and `grouped view`, then jump directly to `Major Arcana / Wands / Cups / Swords / Pentacles`.
-- Keep `recently viewed` cards, save local `favorites`, and compare up to `3` cards side by side.
-- Trigger `favorite / compare` actions directly from the detail modal, with `← → / Esc` keyboard support.
-- On mobile, the filter toolbar collapses to reduce above-the-fold crowding.
+- Search and filter by `name / arcana / suit / element`, with `grid` and `grouped` views.
+- Five sort modes: `by suit / by name / by element / favorites first / by id`.
+- Quick jump to Major Arcana, Wands, Cups, Swords, Pentacles.
+- Favorites + recently viewed + up to 3 cards side-by-side comparison.
+- Keyboard navigation in detail modal (`← → / Esc`), collapsible filter toolbar on mobile.
+
+## Tech Stack
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | `React 19` · `Vite 5` |
+| Styling | `Tailwind CSS v4` |
+| Animation | `Framer Motion` |
+| Backend | Native `Node.js http server` |
+| AI Protocol | `OpenAI Responses API` · `OpenAI-compatible chat/completions` |
+| Real-time | `SSE (text/event-stream)` |
 
 ## Quick Start
 
-1. Install dependencies:
+```bash
+# Install dependencies
+npm install
 
-   ```bash
-   npm install
-   ```
+# Start the frontend
+npm run dev
 
-2. Start the frontend:
+# In another terminal, start the API server
+npm run dev:api
 
-   ```bash
-   npm run dev
-   ```
+# Build for production
+npm run build
+```
 
-3. In another terminal, start the API server:
-
-   ```bash
-   npm run dev:api
-   ```
-
-4. Open:
-
-   ```text
-   http://localhost:5173
-   ```
-
-5. Build for production:
-
-   ```bash
-   npm run build
-   ```
+Open `http://localhost:5173`.
 
 ## Environment Variables
 
@@ -87,20 +81,18 @@ See `.env.example` for the complete template.
 | `OPENAI_MODEL` | `gpt-5-mini` | Default model |
 | `OPENAI_BASE_URL` | `https://api.openai.com/v1` | Official or compatible base URL |
 | `AI_PROVIDER` | `auto` | `auto / openai / mock` |
-| `AI_ORCHESTRATION` | `multi` | Default orchestration mode |
+| `AI_ORCHESTRATION` | `multi` | Default orchestration: `multi / single` |
 | `PORT` | `8787` | Local API port |
-| `CORS_ORIGIN` | `http://localhost:5173` | Allowed browser origin |
-| `VITE_API_BASE_URL` | empty | Optional API URL for separate frontend deployment; leave empty to use same-origin `/api` |
-| `VITE_BASE_PATH` | `/` | Frontend base path; suitable for root-domain deployment by default |
-| `OPENAI_REQUEST_TIMEOUT_MS` | `90000` | Server-side non-stream timeout |
-| `OPENAI_STREAM_TIMEOUT_MS` | `180000` | Server-side streaming timeout |
-| `VITE_STREAM_TIMEOUT_MS` | `180000` | Frontend SSE timeout |
+| `CORS_ORIGIN` | `http://localhost:5173` | Allowed origin(s), comma-separated or `*` |
+| `VITE_API_BASE_URL` | empty | API URL for separate frontend deployment; leave empty for same-origin `/api` |
+| `VITE_BASE_PATH` | `/` | Frontend base path for deployment |
+| `OPENAI_REQUEST_TIMEOUT_MS` | `90000` | Server non-stream timeout (ms) |
+| `OPENAI_STREAM_TIMEOUT_MS` | `180000` | Server stream timeout (ms) |
+| `VITE_STREAM_TIMEOUT_MS` | `180000` | Frontend SSE timeout (ms) |
 
 ## Production Deployment
 
-The app now supports **single-server deployment**: once `dist` exists, `server/index.js` serves both the frontend build and the `/api` endpoints from the same process.
-
-Minimal production flow:
+**Single-server deployment** is supported: once `dist` exists, `server/index.js` serves both the frontend build and `/api` endpoints from the same process.
 
 ```bash
 npm install
@@ -108,113 +100,89 @@ npm run build
 npm run start
 ```
 
-By default:
+By default, frontend and API share the same origin and port — leave `VITE_API_BASE_URL` empty. For split deployments:
 
-- frontend and API share the same host and port
-- no separate static hosting is required
-- `VITE_API_BASE_URL` can stay empty
-
-If you still deploy frontend and backend separately:
-
-- set `VITE_API_BASE_URL` when building the frontend
-- set `CORS_ORIGIN` on the backend; it now supports a single origin, multiple comma-separated origins, or `*`
+- Set `VITE_API_BASE_URL` when building the frontend
+- Set `CORS_ORIGIN` on the backend
 
 ## Docker Deployment
 
-The repository now includes both a root-level `Dockerfile` and `compose.yaml` for single-container deployment.
+The repo includes a root-level `Dockerfile` and `compose.yaml`.
 
-### Option 1: Build the image directly
+### Build directly
 
 ```bash
 docker build -t mystic-tarot .
-```
-
-Run the container:
-
-```bash
 docker run -d --name mystic-tarot -p 8787:8787 --env-file .env mystic-tarot
 ```
 
-### Option 2: Use Docker Compose
-
-If a project-level `.env` file already exists:
+### Docker Compose
 
 ```bash
 docker compose up -d --build
-```
-
-Stop the service:
-
-```bash
-docker compose down
+docker compose down   # stop
 ```
 
 ### Common scenarios
 
-- For subpath deployment, set `VITE_BASE_PATH=/your-subpath/` before building
-- For split frontend/backend deployment, set `VITE_API_BASE_URL=https://api.example.com` before building
-- To change the frontend stream timeout, set `VITE_STREAM_TIMEOUT_MS=240000` before building
-- Runtime settings can still override the container: `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_BASE_URL`, `AI_PROVIDER`, `AI_ORCHESTRATION`, `CORS_ORIGIN`
+- Subpath deployment: set `VITE_BASE_PATH=/your-subpath/` before building
+- Split frontend/backend: set `VITE_API_BASE_URL=https://api.example.com` before building
+- Adjust stream timeout: set `VITE_STREAM_TIMEOUT_MS=240000` before building
+- Runtime overrides: `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_BASE_URL`, `AI_PROVIDER`, `AI_ORCHESTRATION`, `CORS_ORIGIN`
 
 ### Image characteristics
 
-- Uses multi-stage builds and keeps only production dependencies in the final image
-- Runs as a non-root user inside the container
-- Includes a built-in `/health` healthcheck for deployment platforms
-- Continues to serve both `dist` and `/api` from the same Node process
-- `.dockerignore` excludes `.env`, so local secrets are not sent to the build context
+- Multi-stage build, production dependencies only
+- Runs as non-root user
+- Built-in `/health` endpoint
+- `.dockerignore` excludes `.env`
 
-## Browser AI Settings
+## In-Browser AI Settings
 
-The right-side settings panel allows users to:
+The right-side settings panel allows:
 
-- enable or disable browser-side AI overrides,
-- set `Base URL / API Key / Model` for third-party providers,
-- set a custom provider display name,
-- choose `single` or `multi` orchestration per browser,
-- keep all settings in `localStorage` only.
+- Enable / disable browser-side AI overrides.
+- Configure `Base URL / API Key / Model` for third-party providers.
+- Set a custom provider display name and per-browser orchestration mode.
+- All settings stored in `localStorage` only — never written to disk or uploaded.
 
-Priority order:
-
-1. Browser settings
-2. Server environment variables
-3. `mock` fallback
+Priority: **browser settings > server environment variables > mock fallback**.
 
 ## Runtime Modes
 
 ### `mock`
 
-Used when no valid API key is available or when `AI_PROVIDER=mock` is forced.
+When no valid API key is available or `AI_PROVIDER=mock` is forced, returns deterministic server-side mock readings with `orchestration` marked as `mock`.
 
 ### `single`
 
-Generates one full structured reading directly with lower latency and lower token cost.
+Generates a complete structured reading in one pass — lower latency, lower token cost, no three-stage review pipeline.
 
 ### `multi`
 
-Runs three independent stages:
+Three independent stages:
 
-- `DraftAgent`: Card draft
-- `ReviewAgent`: Reading review
-- `FinalizeAgent`: Final reading
+- **DraftAgent**: Card draft
+- **ReviewAgent**: Reading review
+- **FinalizeAgent**: Final reading (prefers native streaming)
 
-## Real SSE Flow
-
-Endpoint:
+## SSE Event Stream
 
 ```text
 POST /api/reading/stream
 ```
 
-Events:
+Event types:
 
-- `meta`
-- `phase`
-- `partial`
-- `complete`
-- `error`
+| Event | Meaning |
+| --- | --- |
+| `meta` | Actual provider and orchestration used |
+| `phase` | Stage status change |
+| `partial` | Partial content snapshot for a stage |
+| `complete` | Final complete result |
+| `error` | Stream-level error |
 
-Typical `multi` flow:
+### `multi` mode event order
 
 ```text
 meta
@@ -225,35 +193,137 @@ phase review:started
 phase review:completed
 partial stage=review
 phase finalize:started
-partial stage=finalize ...
+partial stage=finalize ... (multiple)
 phase finalize:completed
 complete
 ```
 
-Notes:
+Key notes:
 
-- `draft` and `review` partials are snapshots, not the final answer.
-- `finalize` prefers native provider streaming.
-- If native streaming is not supported, the app falls back to buffered finalize output.
+- `draft` and `review` partials are stage snapshots, not the final result.
+- `finalize` prefers native provider streaming — real, continuous output.
+- If the third-party provider lacks native streaming support, it falls back to buffered finalize.
 
 ## Fallback Behavior
 
-If remote AI fails, times out, or is overloaded:
+When the remote model fails, times out, or is overloaded:
 
-- the backend emits the exact failed stage,
-- the frontend shows the failure reason,
-- `multi` falls back to `single`,
-- `single` falls back to `mock`,
-- frontend stream failure can fall back to `local-fallback`.
+- The backend emits the exact failed stage (`draft failed / review failed / finalize failed`).
+- The frontend timeline shows the failure node and reason.
+- Fallback chain: `multi → single → mock → local fallback`.
 
-## License
+Example server log:
 
-This project is currently released under the `Apache-2.0` License. See `LICENSE` for details, and `NOTICE` for attribution information.
+```text
+[reading phase] draft:completed (custom-openai / gpt-5.2)
+[reading phase] review:started
+[reading phase] finalize:failed — system cpu overloaded
+[reading phase] fallback:triggered — system cpu overloaded
+```
 
 ## Architecture
 
-See the Chinese README for the full Mermaid architecture and sequence diagrams:
+```mermaid
+flowchart TD
+  UI[React Reading UI] --> SETTINGS[Browser AI Settings]
+  UI --> STREAM["/api/reading/stream"]
+  UI --> JSON["/api/reading"]
 
-- [中文架构文档](./README.md)
-- [View LICENSE](./LICENSE)
-- [View NOTICE](./NOTICE)
+  SETTINGS --> STREAM
+  SETTINGS --> JSON
+
+  STREAM --> API["server/index.js"]
+  JSON --> API
+  API --> HYDRATE[Card hydration / Validation]
+  HYDRATE --> ORCH["server/ai/orchestrator.js"]
+
+  ORCH --> MODE{provider / orchestration}
+
+  MODE -->|mock| MOCK[Mock Provider]
+  MODE -->|single| SINGLE[Single OpenAI Reading]
+  MODE -->|multi| DRAFT[DraftAgent: Card Draft]
+
+  DRAFT --> REVIEW[ReviewAgent: Reading Review]
+  REVIEW --> FINALIZE[FinalizeAgent: Final Reading]
+  FINALIZE --> FINAL_STREAM[Native finalize streaming]
+
+  FINALIZE -.failure.-> FALLBACK_SINGLE[Fallback to single]
+  FALLBACK_SINGLE -.failure.-> FALLBACK_MOCK[Fallback to mock]
+
+  SINGLE --> MERGE[Reading Contract Merge]
+  MOCK --> MERGE
+  FINAL_STREAM --> MERGE
+  FALLBACK_SINGLE --> MERGE
+  FALLBACK_MOCK --> MERGE
+
+  MERGE --> SSE["SSE: meta / phase / partial / complete"]
+  SSE --> UI
+```
+
+## Sequence Diagram
+
+```mermaid
+sequenceDiagram
+  participant Browser
+  participant API as Node API
+  participant Orch as Orchestrator
+  participant Draft as DraftAgent
+  participant Review as ReviewAgent
+  participant Finalize as FinalizeAgent
+
+  Browser->>API: POST /api/reading/stream
+  API-->>Browser: meta
+  API->>Orch: runReadingOrchestrator
+
+  Orch->>Draft: Draft
+  API-->>Browser: phase draft:started
+  Draft-->>Orch: structured draft
+  API-->>Browser: phase draft:completed
+  API-->>Browser: partial stage=draft
+
+  Orch->>Review: Review
+  API-->>Browser: phase review:started
+  Review-->>Orch: revision plan
+  API-->>Browser: phase review:completed
+  API-->>Browser: partial stage=review
+
+  Orch->>Finalize: Finalize
+  API-->>Browser: phase finalize:started
+  Finalize-->>Browser: provider-native partials
+  API-->>Browser: partial stage=finalize
+  API-->>Browser: phase finalize:completed
+  API-->>Browser: complete
+```
+
+## Project Structure
+
+```text
+src/
+  components/        UI components
+  data/              Tarot card data
+  lib/               Frontend logic, contracts, storage, API wrappers
+  locales/           Chinese / English strings
+server/
+  ai/                Provider, agents, orchestrator, streaming
+  index.js           Node API entry point
+```
+
+## FAQ
+
+### Connection test passes but the actual reading fails
+
+Common causes: third-party providers may not fully support structured or streaming output; temporary model overload; stream timeout.
+
+Try: switch to `single` mode first → verify the Base URL path → increase timeout values if needed.
+
+### Why do I see `partial` events that aren't the final result?
+
+`draft` and `review` partials are stage snapshots. Only the `finalize` stage and the final `complete` event contain the finished reading.
+
+### Why does it fall back to mock or local?
+
+This is intentional — a defense-in-depth fallback chain (multi → single → mock → local) ensures the page never hangs, regardless of where the failure occurs.
+
+## License
+
+`Apache-2.0`. See `LICENSE` and `NOTICE` for details.
