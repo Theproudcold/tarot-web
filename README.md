@@ -1,115 +1,98 @@
 # Mystic Tarot · 神秘塔罗
 
-> 在线体验：`https://tarot.hypoy.cn`  
-> 中文文档 / [English README](./README.en.md)
+> 在线体验：[tarot.hypoy.cn](https://tarot.hypoy.cn)　|　[English README](./README.en.md)
 
-一个基于 `React` + `Vite` 的现代塔罗应用，支持中英双语牌义、结构化 AI 解读、网页内 AI 配置，以及带有实时 `SSE` 进度反馈的轻量多 Agent 后端。
+基于 `React` + `Vite` 的现代塔罗应用，集成双语牌义、结构化 AI 解读、网页内模型配置，以及带实时 `SSE` 进度反馈的轻量多 Agent 后端。
+
+![Mystic Tarot](./docs/cover.png)
 
 ## 界面预览
 
 ![Mystic Tarot 全局预览](./docs/image.webp)
 
-> 这张总览图展示了首页抽牌、牌阵解读、右侧解读引擎配置、全牌图鉴、历史记录与右下角运行状态入口的整体界面风格。
+> 首页抽牌、牌阵解读、右侧引擎配置、全牌图鉴、历史记录及运行状态入口的整体界面。
 
 ## 项目概览
 
-神秘塔罗不是“随机生成一段神秘文案”的玩具，而是尽量把以下几件事做清楚：
+神秘塔罗的设计目标是把解读链路做透明、可验证，而非生成一段模棱两可的神秘文案：
 
-- 前端支持抽牌、牌阵展示、历史记录、双语切换。
-- 后端会把前端上传的卡片 `id` 补全为完整牌义上下文，再交给 AI。
-- 支持在网页里直接配置 `OpenAI` 官方接口或任意 `OpenAI-compatible` 第三方站点。
-- 支持 `single` 单代理模式和 `multi` 三段协作模式。
-- 解读过程通过 `SSE` 实时推送 `meta / phase / partial / complete / error` 事件。
-- 当远端模型失败、超时或过载时，会明确显示失败阶段和回退原因，而不是“假装流程正常完成”。
+- 前端：抽牌、牌阵展示、历史记录、中英双语切换。
+- 后端：接收卡片 `id`，补全牌义上下文后提交 AI，通过 `SSE` 实时推送 `meta / phase / partial / complete / error` 事件。
+- 支持 `OpenAI` 官方接口及任意 `OpenAI-compatible` 第三方站点。
+- 两种编排模式：`single`（单代理直出）与 `multi`（三段协作）。
+- 远端模型失败、超时或过载时，明确展示失败阶段与回退原因，不做"假装成功"的静默降级。
 
 ## 功能亮点
 
-- 完整 `78` 张塔罗牌数据，支持中文 / 英文展示。
-- 三张时间线牌阵：`过去 / 现在 / 未来`。
-- 结构化解读输出：`summary / quote / perCard / advice / followUps / mantra / safetyNote`。
-- 网页内 AI 配置：`Base URL / API Key / Model / 提供方显示名 / 编排模式`。
-- 兼容第三方 OpenAI 站点，可自定义来源显示名。
-- 三段协作编排：`牌意起稿 / 解读复核 / 结果定稿`。
-- 实时进度条与阶段日志，不再依赖前端猜测流程。
-- 全牌图鉴支持 `搜索 / 分组浏览 / 快速跳转 / 收藏 / 对比 / 最近查看`。
-- 当 AI 不可用时自动回退到本地或服务端兜底结果。
+- **78 张完整塔罗数据**，中英双语，支持搜索、分组、排序、收藏与并排对比。
+- **三张时间线牌阵**：过去 / 现在 / 未来。
+- **结构化解读输出**：`summary / quote / perCard / advice / followUps / mantra / safetyNote`。
+- **网页内 AI 配置**：`Base URL / API Key / Model / 提供方显示名 / 编排模式`，配置仅存于浏览器 `localStorage`。
+- **三段协作编排**：牌意起稿 → 解读复核 → 结果定稿，定稿阶段优先走 provider 原生流式。
+- **实时进度与阶段日志**：SSE 推送阶段变化与部分快照，前端不再靠猜测等结果。
+- **多级兜底**：multi 失败 → single → mock → 前端本地回退，保障页面不卡死。
 
 ## 全牌图鉴
 
-图鉴页现在不只是“把 78 张牌铺出来”，而是一个更适合长期查阅和比对的塔罗资料台：
+图鉴设计定位为长期查阅的塔罗资料台，而非简单铺开 78 张牌：
 
-- 支持按 `名称 / 牌组类型 / 花色 / 元素` 搜索与筛选。
-- 支持 `按牌组 / 按名称 / 按元素 / 收藏优先 / 按编号` 排序。
-- 支持 `网格浏览` 与 `分组浏览`，并可快速跳转到 `大阿卡那 / 权杖 / 圣杯 / 宝剑 / 星币`。
-- 支持 `最近查看`、`本地收藏` 与最多 `3` 张牌的并排对比。
-- 详情弹窗内可直接执行 `收藏 / 加入对比`，并支持 `← → / Esc` 键盘操作。
-- 移动端筛选工具栏已改为折叠式，减少首屏遮挡与滚动压力。
+- 按 `名称 / 牌组 / 花色 / 元素` 搜索与筛选，支持 `网格 / 分组` 两种视图。
+- 五种排序：`按牌组 / 按名称 / 按元素 / 收藏优先 / 按编号`。
+- 快速跳转至大阿卡那、权杖、圣杯、宝剑、星币分组。
+- 收藏夹 + 最近查看 + 最多 3 张牌并排对比。
+- 详情弹窗支持键盘操作（`← → / Esc`），移动端筛选栏折叠式设计。
 
 ## 技术栈
 
-- 前端：`React 19`、`Vite 5`
-- 样式：`Tailwind CSS v4`
-- 动画：`Framer Motion`
-- 后端：原生 `Node.js http server`
-- AI 协议：`OpenAI Responses API`、`OpenAI-compatible chat/completions`
-- 实时传输：`SSE (text/event-stream)`
+| 层 | 技术 |
+| --- | --- |
+| 前端框架 | `React 19` · `Vite 5` |
+| 样式 | `Tailwind CSS v4` |
+| 动画 | `Framer Motion` |
+| 后端 | 原生 `Node.js http server` |
+| AI 协议 | `OpenAI Responses API` · `OpenAI-compatible chat/completions` |
+| 实时传输 | `SSE (text/event-stream)` |
 
 ## 快速开始
 
-1. 安装依赖：
+```bash
+# 安装依赖
+npm install
 
-   ```bash
-   npm install
-   ```
+# 启动前端
+npm run dev
 
-2. 启动前端：
+# 另开终端，启动本地 API
+npm run dev:api
 
-   ```bash
-   npm run dev
-   ```
+# 构建生产包
+npm run build
+```
 
-3. 另开一个终端启动本地 API：
-
-   ```bash
-   npm run dev:api
-   ```
-
-4. 打开浏览器：
-
-   ```text
-   http://localhost:5173
-   ```
-
-5. 构建生产包：
-
-   ```bash
-   npm run build
-   ```
+浏览器打开 `http://localhost:5173`。
 
 ## 环境变量
 
-项目默认读取根目录的环境变量；示例可参考 `.env.example`。
+参考 `.env.example` 获取完整模板。
 
-| 变量名 | 默认值 | 说明 |
+| 变量 | 默认值 | 说明 |
 | --- | --- | --- |
-| `OPENAI_API_KEY` | 空 | 服务端默认使用的 API Key |
+| `OPENAI_API_KEY` | 空 | 服务端默认 API Key |
 | `OPENAI_MODEL` | `gpt-5-mini` | 服务端默认模型 |
 | `OPENAI_BASE_URL` | `https://api.openai.com/v1` | 官方或兼容接口基地址 |
 | `AI_PROVIDER` | `auto` | `auto / openai / mock` |
 | `AI_ORCHESTRATION` | `multi` | 默认编排模式：`multi / single` |
 | `PORT` | `8787` | 本地 API 端口 |
-| `CORS_ORIGIN` | `http://localhost:5173` | 允许访问 API 的来源 |
-| `VITE_API_BASE_URL` | 空 | 前端单独部署时可指定 API 地址；留空时默认走同源 `/api` |
-| `VITE_BASE_PATH` | `/` | 前端部署根路径；默认适合根域名部署 |
-| `OPENAI_REQUEST_TIMEOUT_MS` | `90000` | 服务端普通 AI 请求超时 |
-| `OPENAI_STREAM_TIMEOUT_MS` | `180000` | 服务端流式 AI 请求超时 |
-| `VITE_STREAM_TIMEOUT_MS` | `180000` | 前端等待 SSE 的超时 |
+| `CORS_ORIGIN` | `http://localhost:5173` | 允许跨域来源，支持逗号分隔多个或 `*` |
+| `VITE_API_BASE_URL` | 空 | 前端独立部署时指定 API 地址；留空走同源 `/api` |
+| `VITE_BASE_PATH` | `/` | 前端部署根路径 |
+| `OPENAI_REQUEST_TIMEOUT_MS` | `90000` | 服务端普通请求超时 (ms) |
+| `OPENAI_STREAM_TIMEOUT_MS` | `180000` | 服务端流式请求超时 (ms) |
+| `VITE_STREAM_TIMEOUT_MS` | `180000` | 前端 SSE 等待超时 (ms) |
 
 ## 生产部署
 
-现在支持 **单机一体部署**：构建完成后，`server/index.js` 会在存在 `dist` 时同时托管前端静态文件与 `/api` 接口。
-
-最简生产流程：
+支持 **单机一体部署**：构建后 `server/index.js` 同时托管前端静态文件与 `/api` 接口。
 
 ```bash
 npm install
@@ -117,123 +100,89 @@ npm run build
 npm run start
 ```
 
-默认情况下：
-
-- 前端与 API 同域同端口
-- 不再强制依赖额外的静态托管平台
-- `VITE_API_BASE_URL` 留空即可
-
-如果你仍然采用前后端分离部署：
+默认同域同端口，`VITE_API_BASE_URL` 留空即可。如需前后端分离：
 
 - 前端构建时设置 `VITE_API_BASE_URL`
-- 后端设置 `CORS_ORIGIN`，支持单个域名、多个域名（逗号分隔）或 `*`
+- 后端设置 `CORS_ORIGIN`
 
 ## Docker 部署
 
-项目已提供根目录 `Dockerfile` 与 `compose.yaml`，支持一体化镜像构建和单容器运行。
+项目提供根目录 `Dockerfile` 与 `compose.yaml`。
 
-### 方式一：直接构建镜像
+### 直接构建
 
 ```bash
 docker build -t mystic-tarot .
-```
-
-运行容器：
-
-```bash
 docker run -d --name mystic-tarot -p 8787:8787 --env-file .env mystic-tarot
 ```
 
-### 方式二：使用 Docker Compose
-
-如果根目录已有 `.env`：
+### Docker Compose
 
 ```bash
 docker compose up -d --build
-```
-
-停止服务：
-
-```bash
-docker compose down
+docker compose down   # 停止
 ```
 
 ### 常见场景
 
-- 子路径部署：在构建前设置 `VITE_BASE_PATH=/your-subpath/`
-- 前后端分离：在构建前设置 `VITE_API_BASE_URL=https://api.example.com`
-- 需要调整前端流式超时：在构建前设置 `VITE_STREAM_TIMEOUT_MS=240000`
-- 运行时可覆盖：`OPENAI_API_KEY`、`OPENAI_MODEL`、`OPENAI_BASE_URL`、`AI_PROVIDER`、`AI_ORCHESTRATION`、`CORS_ORIGIN`
+- 子路径部署：构建前设 `VITE_BASE_PATH=/your-subpath/`
+- 前后端分离：构建前设 `VITE_API_BASE_URL=https://api.example.com`
+- 调整流式超时：构建前设 `VITE_STREAM_TIMEOUT_MS=240000`
+- 运行时覆盖：`OPENAI_API_KEY`、`OPENAI_MODEL`、`OPENAI_BASE_URL`、`AI_PROVIDER`、`AI_ORCHESTRATION`、`CORS_ORIGIN`
 
-### 当前镜像特性
+### 镜像特性
 
-- 使用多阶段构建，镜像内仅保留生产依赖
-- 容器内以非 root 用户运行
-- 内置 `/health` 健康检查，方便部署平台探活
-- 仍由 Node 同时托管 `dist` 与 `/api`
-- `.dockerignore` 已排除 `.env`，不会把本地密钥打进构建上下文
+- 多阶段构建，仅保留生产依赖
+- 非 root 用户运行
+- 内置 `/health` 健康检查端点
+- `.dockerignore` 已排除 `.env`
 
 ## 网页内 AI 配置
 
-阅读页右侧的 AI 配置面板支持以下能力：
+阅读页右侧面板支持：
 
-- 启用或关闭“网页内 AI 配置”。
+- 启用 / 关闭网页内 AI 配置覆盖。
 - 填写 `Base URL / API Key / Model`，适配第三方兼容站点。
-- 设置“提供方显示名”，例如：`DeepSeek`、`OpenRouter`、`我的接口`。
-- 单独选择当前浏览器的编排模式：`single` 或 `multi`。
-- 配置只保存在当前浏览器的 `localStorage` 中，不会写入仓库或服务器。
+- 自定义"提供方显示名"与当前浏览器的编排模式。
+- 所有配置仅存于 `localStorage`，不落盘、不上传。
 
-优先级如下：
-
-1. 网页内用户配置
-2. 服务端环境变量
-3. 无可用远端配置时回退到 `mock`
+优先级：**网页内配置 > 服务端环境变量 > mock 兜底**。
 
 ## 运行模式
 
 ### `mock`
 
-当没有可用 `OPENAI_API_KEY`，或服务端被强制设为 `AI_PROVIDER=mock` 时：
-
-- 返回确定性的服务端模拟解读。
-- `orchestration` 会标记为 `mock`。
-- 不会伪装成三段流程。
+无可用的 API Key 或强制 `AI_PROVIDER=mock` 时，返回确定性的服务端模拟解读，`orchestration` 标记为 `mock`。
 
 ### `single`
 
-单代理模式会直接生成一份完整结构化解读：
-
-- 延迟更低
-- token 消耗更少
-- 没有三阶段审稿链路
+单代理直接生成完整结构化解读——延迟更低、token 消耗更少，无三阶段审稿链路。
 
 ### `multi`
 
-三段协作模式由三个独立 agent 完成：
+三段协作模式：
 
-- `DraftAgent`：牌意起稿
-- `ReviewAgent`：解读复核
-- `FinalizeAgent`：结果定稿
+- **DraftAgent**：牌意起稿
+- **ReviewAgent**：解读复核
+- **FinalizeAgent**：结果定稿（优先原生流式输出）
 
-## 真实事件流（SSE）
-
-流式接口为：
+## SSE 事件流
 
 ```text
 POST /api/reading/stream
 ```
 
-会向前端推送以下事件：
+事件类型：
 
-- `meta`：本次实际 provider 与 orchestration
-- `phase`：阶段状态变化
-- `partial`：阶段中的部分内容快照
-- `complete`：最终完整结果
-- `error`：流式接口错误
+| 事件 | 含义 |
+| --- | --- |
+| `meta` | 本次实际 provider 与 orchestration |
+| `phase` | 阶段状态变化 |
+| `partial` | 阶段部分内容快照 |
+| `complete` | 最终完整结果 |
+| `error` | 流式接口错误 |
 
-### `multi` 模式下的真实顺序
-
-正常情况下，事件顺序是：
+### `multi` 模式事件顺序
 
 ```text
 meta
@@ -251,23 +200,19 @@ complete
 
 关键说明：
 
-- `draft` 和 `review` 会推送“快照”，它们是阶段性成果，不代表最终定稿。
-- `finalize` 优先走 **provider 原生流式**，也就是结果定稿阶段会真实持续输出，而不是事后假拆帧。
-- 如果第三方站点不支持原生流式，系统会退回到 buffered finalize，再继续完成流程。
+- `draft` / `review` 的 `partial` 是阶段快照，非最终定稿。
+- `finalize` 优先走 provider 原生流式，持续真实输出。
+- 第三方站点不支持原生流式时，自动退回到 buffered finalize。
 
-## 失败与回退机制
+## 失败与回退
 
-当远端模型失败、CPU 过载、无响应或超时时：
+远端模型失败、超时或过载时：
 
-- 后端会发送明确的失败阶段，例如：
-  - `draft failed`
-  - `review failed`
-  - `finalize failed`
-- 前端时间线会展示失败节点与原因。
-- 如果 `multi` 流程失败，会先尝试回退到单代理。
-- 如果单代理也失败，最终回退到 `mock`。
+- 后端发送明确的失败阶段（`draft failed / review failed / finalize failed`）。
+- 前端时间线展示失败节点与原因。
+- 回退链路：`multi → single → mock → 前端本地回退`。
 
-终端日志大致会输出：
+终端日志示例：
 
 ```text
 [reading phase] draft:completed (custom-openai / gpt-5.2)
@@ -365,43 +310,20 @@ server/
 
 ## 常见问题
 
-### 1. 连接测试成功，但正式解读失败
+### 连接测试成功但正式解读失败
 
-常见原因：
+常见原因：第三方站点不完全兼容结构化输出或流式输出；模型临时过载；流式链路超时。
 
-- 第三方兼容站点只兼容基础请求，不完全兼容结构化输出或流式输出。
-- 模型临时过载，例如 `system_cpu_overloaded`。
-- 流式链路超时，或第三方对长连接支持不稳定。
+建议：先切 `single` 验证基础可用性 → 确认 Base URL 路径 → 适当提高超时参数。
 
-建议：
+### 看到 `partial` 但内容还不是最终版？
 
-- 先切换到 `single` 模式验证基础可用性。
-- 确认 `Base URL` 是否应指向 `/v1`、`/responses` 或 `/chat/completions`。
-- 适当提高 `.env.example` 中的超时参数。
+`draft` 和 `review` 的 `partial` 是阶段快照，只有 `finalize` 阶段和 `complete` 事件对应的才是定稿。
 
-### 2. 为什么看到 `partial`，但内容还不是最终版？
+### 为什么最终回退到 mock 或本地解读？
 
-因为：
-
-- `draft` 和 `review` 的 `partial` 是阶段快照；
-- 只有 `finalize` 阶段和最终 `complete` 才对应真正面向用户的定稿结果。
-
-### 3. 为什么最终会回退到 `mock` 或本地解读？
-
-这是故意设计的兜底策略，用来保证页面不会卡死：
-
-- `multi` 失败 → 先回退 `single`
-- `single` 再失败 → 回退 `mock`
-- 前端流式异常 → 最后回退 `local-fallback`
+这是设计上的兜底策略——multi 失败 → single → mock → 前端本地回退，保证页面不会卡死。
 
 ## 开源协议
 
-本项目当前采用 `Apache-2.0` 协议，详见 `LICENSE`。如需保留归属说明，请同时查看 `NOTICE`。
-
-## English
-
-英文文档已拆分到 `README.en.md`：
-
-- [Open English README](./README.en.md)
-- [查看 LICENSE](./LICENSE)
-- [查看 NOTICE](./NOTICE)
+`Apache-2.0`，详见 `LICENSE` 与 `NOTICE`。

@@ -23,9 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 .ace-tool/
+.worktrees/
 
 # Environment files
 .env
 .env.*
 !.env.example
-
