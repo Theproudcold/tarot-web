@@ -60,7 +60,7 @@ const History = ({ language, t }) => {
           return (
             <div
               key={record.id}
-              className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition-all duration-300 hover:border-tarot-gold/20 hover:bg-white/[0.07] md:p-5"
+              className="overflow-hidden rounded-2xl glass-panel glass-panel-hover p-4 md:p-5"
             >
               <div
                 className="cursor-pointer"

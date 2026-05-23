@@ -177,28 +177,66 @@ const Interpretation = ({
 
   if (loading && !reading) {
     return (
-      <div className="mx-auto mt-8 w-full max-w-4xl animate-fadeIn rounded-2xl border border-tarot-gold/20 bg-black/30 p-6 text-left md:p-8">
-        <div className="mb-4 flex items-center justify-between gap-4">
+      <div className="mx-auto mt-8 w-full max-w-4xl animate-fadeIn glass-panel rounded-3xl p-6 text-left md:p-8 relative overflow-hidden">
+        {/* Decorative background aura */}
+        <div className="absolute -top-12 -left-12 w-40 h-40 bg-tarot-gold/5 rounded-full blur-2xl"></div>
+        
+        <div className="mb-6 flex items-center justify-between gap-4 border-b border-white/5 pb-4">
           <div>
             <h2 className="font-serif text-2xl text-tarot-gold md:text-3xl">{t?.('interpretationTitle') || labels.summaryTitle}</h2>
             <p className="mt-2 text-sm text-gray-400">{t?.('aiLoading')}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {loadingDots.map((delay) => (
               <span key={delay} className={`h-2.5 w-2.5 rounded-full bg-tarot-gold animate-pulse ${delay}`}></span>
             ))}
           </div>
         </div>
+
         <PhaseTimeline
           displayedPhases={displayedPhases}
           orchestrationLabel={orchestrationLabel}
           timelineState={timelineState}
           t={t}
         />
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="h-32 rounded-xl bg-white/5"></div>
-          <div className="h-32 rounded-xl bg-white/5"></div>
-          <div className="h-40 rounded-xl bg-white/5 md:col-span-2"></div>
+
+        <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-2">
+          {/* Left: Element Distribution skeleton with mystical aura */}
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-white/5 bg-black/20 p-6 relative min-h-[220px]">
+            {/* Spinning Ritual Star Orbit */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
+              <div className="w-36 h-36 rounded-full border border-dashed border-tarot-gold/30 animate-[spin_20s_linear_infinite]"></div>
+              <div className="absolute w-24 h-24 rounded-full border border-double border-tarot-gold/20 animate-[spin_10s_linear_infinite_reverse]"></div>
+            </div>
+            
+            <div className="relative z-10 flex h-28 w-full items-end justify-around gap-4 px-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex h-full w-10 flex-col items-center justify-end gap-2">
+                  <div className="h-4 w-6 rounded bg-white/5 animate-pulse"></div>
+                  <div 
+                    className="w-full rounded-t bg-tarot-gold/10 animate-pulse" 
+                    style={{ 
+                      height: `${20 + i * 15}%`,
+                      animationDelay: `${i * 0.15}s` 
+                    }}
+                  ></div>
+                  <div className="h-3 w-8 rounded bg-white/5 animate-pulse"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: Text summary skeleton with lines */}
+          <div className="flex flex-col justify-center rounded-2xl border border-white/5 bg-black/20 p-6 space-y-4 min-h-[220px]">
+            <div className="h-4 w-1/3 rounded bg-tarot-gold/20 animate-pulse"></div>
+            <div className="space-y-2">
+              <div className="h-3 w-full rounded bg-white/5 animate-pulse"></div>
+              <div className="h-3 w-[92%] rounded bg-white/5 animate-pulse" style={{ animationDelay: '0.1s' }}></div>
+              <div className="h-3 w-[95%] rounded bg-white/5 animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+              <div className="h-3 w-[85%] rounded bg-white/5 animate-pulse" style={{ animationDelay: '0.3s' }}></div>
+              <div className="h-3 w-[60%] rounded bg-white/5 animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+            </div>
+          </div>
         </div>
       </div>
     );

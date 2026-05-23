@@ -16,7 +16,7 @@ const GalleryCardTile = ({
   onToggleFavorite,
   t,
 }) => (
-  <article className="group w-full max-w-[188px] rounded-[28px] border border-white/8 bg-white/[0.03] p-3 text-left shadow-lg shadow-black/10 transition-all duration-300 hover:-translate-y-1 hover:border-tarot-gold/30 hover:bg-white/[0.05]">
+  <article className="group w-full max-w-[188px] rounded-[28px] glass-panel glass-panel-hover p-3 text-left shadow-lg shadow-black/10">
     <div className="mb-3 flex items-start justify-between gap-2 px-1">
       <div className="flex flex-wrap gap-2">
         <span className="rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[11px] tracking-wide text-gray-300">

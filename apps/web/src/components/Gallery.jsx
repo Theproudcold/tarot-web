@@ -418,7 +418,7 @@ const Gallery = ({ cards, language = 'en', selectionResetKey = 0, t = (key) => k
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 pb-10 pt-4 md:px-6">
-      <div className="mb-6 rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl shadow-black/20 backdrop-blur-sm md:p-6">
+      <div className="mb-6 rounded-3xl glass-panel p-5 md:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="mb-2 text-xs uppercase tracking-[0.35em] text-tarot-gold/70">{t('galleryEyebrow')}</p>
@@ -536,7 +536,7 @@ const Gallery = ({ cards, language = 'en', selectionResetKey = 0, t = (key) => k
           </>
         )
       ) : (
-        <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.03] px-6 py-14 text-center">
+        <div className="rounded-3xl border border-dashed border-tarot-gold/30 glass-panel px-6 py-14 text-center">
           <h3 className="text-2xl font-serif text-tarot-gold">{t('galleryEmptyTitle')}</h3>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-gray-400 md:text-base">{t('galleryEmptyHint')}</p>
           <button
