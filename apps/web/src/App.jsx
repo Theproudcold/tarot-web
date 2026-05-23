@@ -14,6 +14,7 @@ import { createHistoryRecord, upsertHistoryRecord } from './lib/historyStorage';
 import { loadAiSettings, saveAiSettings } from './lib/aiSettings';
 import { mergeReadingWithBase } from './lib/readingContract.js';
 import { readLanguageFromUrl, readViewModeFromUrl, updateUrlParams } from './lib/urlState.js';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const phaseStageOrder = ['draft', 'review', 'finalize', 'fallback'];
 const repositoryUrl = 'https://github.com/Theproudcold/tarot-web';
@@ -442,23 +443,39 @@ function App() {
                     </div>
                   </div>
 
-                  {!isReadingComplete ? (
-                    <CardSelector
-                      onSelect={handleSelectCard}
-                      cardsRemaining={deck.length}
-                      t={t}
-                    />
-                  ) : (
-                    <div className="mt-2 flex animate-fadeIn flex-col items-center gap-4 rounded-3xl border border-tarot-gold/10 bg-black/20 py-8 text-center md:py-10">
-                      <h3 className="font-serif text-2xl text-tarot-gold">{t('readingComplete')}</h3>
-                      <button
-                        className="rounded-full border-2 border-tarot-gold bg-transparent px-8 py-3 text-lg uppercase tracking-widest text-tarot-gold transition-all duration-300 hover:bg-tarot-gold hover:text-tarot-bg hover:shadow-[0_0_20px_rgba(212,175,55,0.6)] md:text-xl"
-                        onClick={handleReset}
+                  <AnimatePresence mode="wait">
+                    {!isReadingComplete ? (
+                      <motion.div
+                        key="card-selector"
+                        initial={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -15, height: 0, overflow: 'hidden' }}
+                        transition={{ duration: 0.25 }}
                       >
-                        {t('newReading')}
-                      </button>
-                    </div>
-                  )}
+                        <CardSelector
+                          onSelect={handleSelectCard}
+                          cardsRemaining={deck.length}
+                          t={t}
+                        />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="reading-complete-banner"
+                        initial={{ opacity: 0, y: 15, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -15 }}
+                        transition={{ type: 'spring', stiffness: 100, damping: 15 }}
+                        className="mt-2 flex flex-col items-center gap-4 rounded-3xl border border-tarot-gold/10 bg-black/20 py-8 text-center md:py-10"
+                      >
+                        <h3 className="font-serif text-2xl text-tarot-gold">{t('readingComplete')}</h3>
+                        <button
+                          className="rounded-full border-2 border-tarot-gold bg-transparent px-8 py-3 text-lg uppercase tracking-widest text-tarot-gold transition-all duration-300 hover:bg-tarot-gold hover:text-tarot-bg hover:shadow-[0_0_20px_rgba(212,175,55,0.6)] md:text-xl"
+                          onClick={handleReset}
+                        >
+                          {t('newReading')}
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </section>
 

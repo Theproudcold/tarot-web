@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { getOrchestrationLabel } from '../lib/orchestrationLabels.js';
+import { motion } from 'framer-motion';
 import { getReadingSourceLabel } from '../lib/readingSource.js';
 import { buildReading } from '../lib/tarotReading';
 import { getDisplayedPhases, getTimelineState } from '../lib/readingRuntime.js';
@@ -177,7 +178,13 @@ const Interpretation = ({
 
   if (loading && !reading) {
     return (
-      <div className="mx-auto mt-8 w-full max-w-4xl animate-fadeIn glass-panel rounded-3xl p-6 text-left md:p-8 relative overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ type: 'spring', stiffness: 90, damping: 14 }}
+        className="mx-auto mt-8 w-full max-w-4xl glass-panel rounded-3xl p-6 text-left md:p-8 relative overflow-hidden"
+      >
         {/* Decorative background aura */}
         <div className="absolute -top-12 -left-12 w-40 h-40 bg-tarot-gold/5 rounded-full blur-2xl"></div>
         
@@ -238,12 +245,17 @@ const Interpretation = ({
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="mx-auto mt-8 w-full max-w-4xl animate-fadeIn text-left font-serif text-gray-200">
+    <motion.div
+      initial={{ opacity: 0, y: 25 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', stiffness: 70, damping: 15 }}
+      className="mx-auto mt-8 w-full max-w-4xl text-left font-serif text-gray-200"
+    >
       <div className="mb-4 rounded-xl border border-tarot-gold/30 bg-black/40 p-4 backdrop-blur-md md:mb-6 md:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
@@ -438,7 +450,7 @@ const Interpretation = ({
           </button>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
