@@ -78,6 +78,7 @@ export const buildSingleAgentInput = ({ cards, language, question, previousReadi
       'advice 层级：至少提供一条【立刻能做的微小行动】和一条【认知视角的转换】。',
       'followUps 问题层级：第一问探索显性的情绪阻碍，第二问直指问题的核心矛盾。',
       'quote、mantra、followUps 必须通过"可替换性测试"——如果换到另一个牌阵依然成立，就重写。杜绝"答案在你心里""顺其自然""相信自己"等可复用的空泛鸡汤。',
+      'quote、mantra、followUps 必须锚定当前三张牌与用户问题，避免机械堆砌牌名；previousReading 只能作为上下文参考，不要复用 previousReading 的总结或建议。',
       '自检清单：写完后逐条检查每个字段是否包含本次牌面的具体牌名、关键词或元素意象，不含则重写。',
       buildJsonContract(language, [
         '必须包含这些字段：summary、quote、perCard、advice、followUps、mantra、safetyNote。',
@@ -98,6 +99,7 @@ export const buildSingleAgentInput = ({ cards, language, question, previousReadi
     'advice layers: Include at least one immediate 【micro-action】 and one 【cognitive shift】.',
     'followUps progression: Start with surfacing explicit emotional blocks, then probe the core contradiction.',
     'quote, mantra, and followUps must pass the "substitutability test"—if they would still work in any other spread, rewrite them. No interchangeable inspirational texts like "the answer is within you" or "trust the process."',
+    'Anchor quote, mantra, and followUps to the current three cards and user question. Avoid mechanically stacking card names, and treat previousReading only as context rather than reusing its summary or advice.',
     'Self-check: after writing, verify each field contains specific card names, keywords, or elemental imagery from this spread; if not, rewrite.',
     buildJsonContract(language, [
       'Include these exact fields: summary, quote, perCard, advice, followUps, mantra, safetyNote.',

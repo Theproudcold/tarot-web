@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { getOrchestrationLabel } from '../lib/orchestrationLabels.js';
 import { getReadingSourceLabel } from '../lib/readingSource.js';
 import { buildReading } from '../lib/tarotReading';
+import { getDisplayedPhases, getTimelineState } from '../lib/readingRuntime.js';
 
 const labelsByLanguage = {
   en: {
@@ -28,47 +29,12 @@ const labelsByLanguage = {
   },
 };
 
-const phaseLabelsByLanguage = {
-  en: {
-    draft: 'Card draft',
-    review: 'Reading review',
-    finalize: 'Final reading',
-    fallback: 'Fallback',
-  },
-  zh: {
-    draft: '牌意起稿',
-    review: '解读复核',
-    finalize: '结果定稿',
-    fallback: '降级回退',
-  },
-};
-
-const phaseStatusLabelsByLanguage = {
-  en: {
-    pending: 'Pending',
-    started: 'In Progress',
-    completed: 'Completed',
-    triggered: 'Triggered',
-    failed: 'Failed',
-  },
-  zh: {
-    pending: '等待中',
-    started: '进行中',
-    completed: '已完成',
-    triggered: '已触发',
-    failed: '失败',
-  },
-};
-
 const barColors = {
   Fire: 'bg-red-500',
   Water: 'bg-blue-500',
   Air: 'bg-yellow-400',
   Earth: 'bg-green-500',
 };
-
-const phaseOrder = ['draft', 'review', 'finalize', 'fallback'];
-const pipelineStages = ['draft', 'review', 'finalize'];
 const loadingDots = ['delay-0', 'delay-150', 'delay-300'];
 
 const StreamingPlaceholder = ({ text }) => (
@@ -136,7 +102,7 @@ const PhaseTimeline = ({ displayedPhases, orchestrationLabel, timelineState, t }
             return (
               <div
                 key={phase.stage}
-                className={`rounded-xl border p-4 transition-all ${getPhaseTone(phase.status)} ${isActive ? 'shadow-[0_0_20px_rgba(56,189,248,0.15)]' : ''}`}
+                className={`min-h-[132px] rounded-xl border p-4 transition-all ${getPhaseTone(phase.status)} ${isActive ? 'shadow-[0_0_20px_rgba(56,189,248,0.15)]' : ''}`}
               >
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <span className={`flex h-8 w-8 items-center justify-center rounded-full border text-sm font-semibold ${isActive ? 'animate-pulse border-current' : 'border-current/40'}`}>
@@ -174,139 +140,25 @@ const Interpretation = ({
   t,
 }) => {
   const labels = labelsByLanguage[language];
-  const phaseLabels = phaseLabelsByLanguage[language] || phaseLabelsByLanguage.en;
-  const phaseStatusLabels = phaseStatusLabelsByLanguage[language] || phaseStatusLabelsByLanguage.en;
   const resolvedReading = useMemo(() => reading || buildReading(cards, { language }), [cards, language, reading]);
   const resolvedOrchestration = orchestration || reading?.orchestration || resolvedReading?.orchestration || null;
 
   const displayedPhases = useMemo(() => {
-    const phaseMap = new Map(
-      (phases || [])
-        .filter((item) => item?.stage)
-        .map((item) => [item.stage, item])
-    );
-
-    const completedPipelineStages = Array.isArray(resolvedReading?.agentPipeline)
-      ? resolvedReading.agentPipeline.filter((stage) => pipelineStages.includes(stage))
-      : [];
-
-    if (!loading && completedPipelineStages.length > 0) {
-      completedPipelineStages.forEach((stage) => {
-        const phase = phaseMap.get(stage);
-        phaseMap.set(stage, {
-          ...phase,
-          stage,
-          status: 'completed',
-          label: phaseLabels[stage] || phase?.label || stage,
-        });
-      });
-    }
-
-    const hasPipelinePhases = pipelineStages.some((stage) => phaseMap.has(stage));
-
-    const defaultStages = resolvedOrchestration === 'multi' || hasPipelinePhases
-      ? pipelineStages
-      : [];
-
-    const items = defaultStages.map((stage) => {
-      const phase = phaseMap.get(stage);
-      return {
-        stage,
-        label: phase?.label || phaseLabels[stage],
-        status: phase?.status || 'pending',
-        statusLabel: phaseStatusLabels[phase?.status || 'pending'] || phaseStatusLabels.pending,
-        detail: phase?.detail || '',
-      };
+    return getDisplayedPhases({
+      phases,
+      orchestration: resolvedOrchestration,
+      language,
+      loading,
+      reading: resolvedReading,
     });
+  }, [language, loading, phases, resolvedOrchestration, resolvedReading]);
 
-    if (phaseMap.has('fallback')) {
-      const phase = phaseMap.get('fallback');
-      items.push({
-        stage: 'fallback',
-        label: phaseLabels.fallback || phase?.label || 'fallback',
-        status: phase?.status || 'triggered',
-        statusLabel: phaseStatusLabels[phase?.status || 'triggered'] || phaseStatusLabels.triggered,
-        detail: phase?.detail || '',
-      });
-    }
-
-    if (items.length > 0) {
-      return items;
-    }
-
-    return [...phaseMap.values()]
-      .sort((left, right) => phaseOrder.indexOf(left.stage) - phaseOrder.indexOf(right.stage))
-      .map((phase) => ({
-        ...phase,
-        label: phaseLabels[phase.stage] || phase.label || phase.stage,
-        statusLabel: phaseStatusLabels[phase.status] || phaseStatusLabels.pending,
-        detail: phase.detail || '',
-      }));
-  }, [loading, phaseLabels, phaseStatusLabels, phases, resolvedOrchestration, resolvedReading]);
-
-  const timelineState = useMemo(() => {
-    const activePhases = displayedPhases.filter((phase) => pipelineStages.includes(phase.stage));
-    const failedPhase = activePhases.find((phase) => phase.status === 'failed');
-    const fallbackPhase = displayedPhases.find((phase) => phase.stage === 'fallback');
-    const hasFallback = Boolean(fallbackPhase);
-    const expectsFullPipeline = resolvedOrchestration === 'multi';
-    const hasFullPipeline = !expectsFullPipeline || activePhases.length === pipelineStages.length;
-    const isComplete = hasFullPipeline && activePhases.length > 0 && activePhases.every((phase) => phase.status === 'completed');
-    const isRunning = activePhases.some((phase) => phase.status === 'started');
-    const isWaiting = activePhases.some((phase) => phase.status === 'pending');
-
-    if (loading && isComplete) {
-      return {
-        kind: 'finalize-sync',
-        label: t?.('aiPhaseTimelineDone') || '流程已完成',
-        hint: t?.('aiPhaseTimelineFinalizeStreaming') || '三段流程已结束，当前仅在同步最终文本。',
-        tone: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-100',
-      };
-    }
-
-    if (hasFallback) {
-      return {
-        kind: 'fallback',
-        label: t?.('aiPhaseTimelineFallback') || '已回退',
-        hint: fallbackPhase?.detail || failedPhase?.detail || t?.('aiPhaseTimelineHint') || 'Track the current interpretation stage.',
-        tone: 'border-amber-500/30 bg-amber-500/10 text-amber-100',
-      };
-    }
-
-    if (failedPhase) {
-      return {
-        kind: 'failed',
-        label: t?.('aiPhaseTimelineFailed') || '阶段失败',
-        hint: failedPhase.detail || t?.('aiPhaseTimelineHint') || 'Track the current interpretation stage.',
-        tone: 'border-rose-500/30 bg-rose-500/10 text-rose-100',
-      };
-    }
-
-    if (isComplete) {
-      return {
-        kind: 'completed',
-        label: t?.('aiPhaseTimelineDone') || '流程已完成',
-        hint: t?.('aiPhaseTimelineHint') || 'Track the current interpretation stage.',
-        tone: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-100',
-      };
-    }
-
-    if (loading || isRunning || isWaiting) {
-      return {
-        kind: 'running',
-        label: t?.('aiPhaseTimelineRunning') || '流程进行中',
-        hint: t?.('aiPhaseTimelineHint') || 'Track the current interpretation stage.',
-        tone: 'border-sky-500/30 bg-sky-500/10 text-sky-100',
-      };
-    }
-
-    return {
-      kind: 'idle',
-      label: null,
-      hint: t?.('aiPhaseTimelineHint') || 'Track the current interpretation stage.',
-      tone: 'border-white/10 bg-white/5 text-gray-300',
-    };
-  }, [displayedPhases, loading, resolvedOrchestration, t]);
+  const timelineState = useMemo(() => getTimelineState({
+    displayedPhases,
+    orchestration: resolvedOrchestration,
+    loading,
+    t,
+  }), [displayedPhases, loading, resolvedOrchestration, t]);
 
   if (!cards || cards.length < 3 || !resolvedReading) return null;
 
