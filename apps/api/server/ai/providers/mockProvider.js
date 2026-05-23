@@ -1,4 +1,4 @@
-import { buildReading } from '../../../src/lib/tarotReading.js';
+import { buildReading } from '../../../../web/src/lib/tarotReading.js';
 
 export const createMockReading = async ({ cards, language, question, createdAt }) => ({
   reading: {

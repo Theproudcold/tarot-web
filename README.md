@@ -95,7 +95,7 @@ npm run build
 
 ## 生产部署
 
-支持 **单机一体部署**：构建后 `server/index.js` 同时托管前端静态文件与 `/api` 接口。
+支持 **单机一体部署**：构建后 `apps/api/server/index.js` 同时托管前端静态文件与 `/api` 接口。
 
 ```bash
 npm install
@@ -107,6 +107,12 @@ npm run start
 
 - 前端构建时设置 `VITE_API_BASE_URL`
 - 后端设置 `CORS_ORIGIN`
+
+当前代码结构已经拆为 `apps/web` 与 `apps/api/server`。根目录脚本会代理到对应应用：
+
+- `npm run dev` 启动 `apps/web`
+- `npm run dev:api` 启动 `apps/api/server`
+- `npm run build` 构建前端到根目录 `dist`
 
 ## Docker 部署
 
@@ -235,10 +241,10 @@ flowchart TD
   SETTINGS --> STREAM
   SETTINGS --> JSON
 
-  STREAM --> API["server/index.js"]
+  STREAM --> API["apps/api/server/index.js"]
   JSON --> API
   API --> HYDRATE[卡片补全 / 请求校验]
-  HYDRATE --> ORCH["server/ai/orchestrator.js"]
+  HYDRATE --> ORCH["apps/api/server/ai/orchestrator.js"]
 
   ORCH --> MODE{provider / orchestration}
 
@@ -301,14 +307,14 @@ sequenceDiagram
 ## 项目结构
 
 ```text
-src/
-  components/        前端界面组件
-  data/              塔罗牌数据
-  lib/               前端逻辑、契约、存储、API 封装
-  locales/           中英文本
-server/
-  ai/                provider、agents、orchestrator、streaming
-  index.js           Node API 入口
+apps/
+  web/
+    src/             前端界面、牌面数据、浏览器端 API 封装
+    public/          静态资源与牌图
+  api/
+    server/          Fastify API、AI provider、agents、orchestrator、streaming
+packages/
+  shared/            前后端共享事件契约
 ```
 
 ## 常见问题

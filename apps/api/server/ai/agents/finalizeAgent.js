@@ -1,4 +1,4 @@
-import { readingSlots } from '../../../src/lib/tarotReading.js';
+import { readingSlots } from '../../../../web/src/lib/tarotReading.js';
 import { runStructuredOpenAITask, streamStructuredOpenAITask } from '../providers/openaiProvider.js';
 import { finalReadingJsonSchema } from './agentSchemas.js';
 import { buildContrastBlock } from './fewShotExamples.js';

@@ -4,14 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:api": "node server/index.js",
-    "build": "vite build",
+    "dev": "vite --config apps/web/vite.config.js",
+    "dev:api": "node apps/api/server/index.js",
+    "build": "vite build --config apps/web/vite.config.js",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "start": "node server/index.js",
-    "test": "vitest",
-    "test:run": "vitest run"
+    "preview": "vite preview --config apps/web/vite.config.js",
+    "start": "node apps/api/server/index.js",
+    "test": "vitest --config apps/web/vite.config.js",
+    "test:run": "vitest run --config apps/web/vite.config.js"
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",

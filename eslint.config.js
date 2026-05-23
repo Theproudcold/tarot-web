@@ -28,7 +28,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['server/**/*.{js,jsx}'],
+    files: ['apps/api/server/**/*.{js,jsx}'],
     languageOptions: {
       globals: globals.node,
     },

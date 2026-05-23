@@ -95,7 +95,7 @@ See `.env.example` for the complete template.
 
 ## Production Deployment
 
-**Single-server deployment** is supported: once `dist` exists, `server/index.js` serves both the frontend build and `/api` endpoints from the same process.
+**Single-server deployment** is supported: once `dist` exists, `apps/api/server/index.js` serves both the frontend build and `/api` endpoints from the same process.
 
 ```bash
 npm install
@@ -107,6 +107,12 @@ By default, frontend and API share the same origin and port — leave `VITE_API_
 
 - Set `VITE_API_BASE_URL` when building the frontend
 - Set `CORS_ORIGIN` on the backend
+
+The codebase is now split into `apps/web` and `apps/api/server`. Root scripts delegate to the right app:
+
+- `npm run dev` starts `apps/web`
+- `npm run dev:api` starts `apps/api/server`
+- `npm run build` builds the frontend into root `dist`
 
 ## Docker Deployment
 
@@ -235,10 +241,10 @@ flowchart TD
   SETTINGS --> STREAM
   SETTINGS --> JSON
 
-  STREAM --> API["server/index.js"]
+  STREAM --> API["apps/api/server/index.js"]
   JSON --> API
   API --> HYDRATE[Card hydration / Validation]
-  HYDRATE --> ORCH["server/ai/orchestrator.js"]
+  HYDRATE --> ORCH["apps/api/server/ai/orchestrator.js"]
 
   ORCH --> MODE{provider / orchestration}
 
@@ -301,14 +307,14 @@ sequenceDiagram
 ## Project Structure
 
 ```text
-src/
-  components/        UI components
-  data/              Tarot card data
-  lib/               Frontend logic, contracts, storage, API wrappers
-  locales/           Chinese / English strings
-server/
-  ai/                Provider, agents, orchestrator, streaming
-  index.js           Node API entry point
+apps/
+  web/
+    src/             UI, card data, browser-side API wrappers
+    public/          Static assets and card images
+  api/
+    server/          Fastify API, AI providers, agents, orchestrator, streaming
+packages/
+  shared/            Shared event contracts
 ```
 
 ## FAQ

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const env = globalThis.process?.env ?? {};
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const projectRoot = resolve(__dirname, '../../..');
+const projectRoot = resolve(__dirname, '../../../../..');
 
 const mimeTypes = {
   '.html': 'text/html; charset=utf-8',

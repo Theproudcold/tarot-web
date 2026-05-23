@@ -27,8 +27,8 @@ ENV PORT=8787
 
 COPY --from=builder --chown=node:node /app/package*.json ./
 COPY --from=builder --chown=node:node /app/node_modules ./node_modules
-COPY --from=builder --chown=node:node /app/server ./server
-COPY --from=builder --chown=node:node /app/src ./src
+COPY --from=builder --chown=node:node /app/apps ./apps
+COPY --from=builder --chown=node:node /app/packages ./packages
 COPY --from=builder --chown=node:node /app/dist ./dist
 COPY --from=builder --chown=node:node /app/LICENSE ./LICENSE
 COPY --from=builder --chown=node:node /app/NOTICE ./NOTICE

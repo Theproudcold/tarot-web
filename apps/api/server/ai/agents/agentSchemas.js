@@ -1,5 +1,5 @@
-import { aiReadingJsonSchema } from '../../../src/lib/readingContract.js';
-import { readingSlots } from '../../../src/lib/tarotReading.js';
+import { aiReadingJsonSchema } from '../../../../web/src/lib/readingContract.js';
+import { readingSlots } from '../../../../web/src/lib/tarotReading.js';
 
 export const draftReadingJsonSchema = aiReadingJsonSchema;
 export const finalReadingJsonSchema = aiReadingJsonSchema;

@@ -1,4 +1,4 @@
-import { computeElementDistribution } from '../../../src/lib/tarotReading.js';
+import { computeElementDistribution } from '../../../../web/src/lib/tarotReading.js';
 import { buildCardContext, buildGroundedInstructions, buildJsonContract } from '../providers/openaiProvider.js';
 
 const getLocalizedText = (language, zhText, enText) => (language === 'zh' ? zhText : enText);

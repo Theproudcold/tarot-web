@@ -1,4 +1,4 @@
-import { tarotCards } from '../../../src/data/tarotCards.js';
+import { tarotCards } from '../../../../web/src/data/tarotCards.js';
 
 const cardIndex = new Map(tarotCards.map((card) => [card.id, card]));
 

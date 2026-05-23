@@ -1,6 +1,6 @@
-import { aiReadingJsonSchema, mergeReadingWithBase } from '../../../src/lib/readingContract.js';
+import { aiReadingJsonSchema, mergeReadingWithBase } from '../../../../web/src/lib/readingContract.js';
 import { logMicrocopyDebug } from '../debugMicrocopy.js';
-import { buildReading, computeElementDistribution, getCardMeaning, getLocalized, getOrientationLabel, readingSlots } from '../../../src/lib/tarotReading.js';
+import { buildReading, computeElementDistribution, getCardMeaning, getLocalized, getOrientationLabel, readingSlots } from '../../../../web/src/lib/tarotReading.js';
 import { parsePartialJsonObject } from './partialJson.js';
 
 const DEFAULT_OPENAI_BASE_URL = 'https://api.openai.com/v1';

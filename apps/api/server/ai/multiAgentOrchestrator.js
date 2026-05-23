@@ -1,5 +1,5 @@
-import { mergeReadingWithBase } from '../../src/lib/readingContract.js';
-import { buildReading } from '../../src/lib/tarotReading.js';
+import { mergeReadingWithBase } from '../../../web/src/lib/readingContract.js';
+import { buildReading } from '../../../web/src/lib/tarotReading.js';
 import { runDraftAgent } from './agents/draftAgent.js';
 import { streamFinalizeAgent } from './agents/finalizeAgent.js';
 import { logMicrocopyDebug } from './debugMicrocopy.js';
