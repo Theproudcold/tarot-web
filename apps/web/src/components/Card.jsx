@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { resolveAssetPath } from '../lib/assetPaths.js';
 
 const Card = ({
@@ -12,6 +12,11 @@ const Card = ({
   floating = true,
 }) => {
   const cardRef = useRef(null);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+
+  useEffect(() => {
+    setIsImageLoaded(false);
+  }, [card?.id, card?.image]);
 
   const getLocalized = (value, lang) => {
     if (typeof value === 'string') return value;
@@ -99,8 +104,16 @@ const Card = ({
                     alt={cardTitle}
                     loading="lazy"
                     decoding="async"
-                    className="w-[94%] h-[94%] object-cover mix-blend-multiply opacity-95 shadow-inner rounded-sm filter contrast-110 sepia-[.1]"
+                    onLoad={() => setIsImageLoaded(true)}
+                    className={`w-[94%] h-[94%] object-cover mix-blend-multiply shadow-inner rounded-sm filter contrast-110 sepia-[.1] transition-opacity duration-500 ${isImageLoaded ? 'opacity-95' : 'opacity-0'}`}
                   />
+                  {!isImageLoaded && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/[0.03] animate-pulse pointer-events-none z-10">
+                      <div className="w-10 h-10 rounded-full border border-dashed border-tarot-gold/30 flex items-center justify-center animate-[spin_8s_linear_infinite]">
+                        <span className="text-tarot-gold/40 text-[10px]">✨</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="absolute inset-0 bg-radial-[at_50%_50%] from-transparent via-transparent to-black/40 z-30 pointer-events-none" />

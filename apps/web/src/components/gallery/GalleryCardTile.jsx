@@ -1,5 +1,6 @@
 import React from 'react';
 import Card from '../Card';
+import { motion } from 'framer-motion';
 
 const GalleryCardTile = ({
   card,
@@ -16,7 +17,12 @@ const GalleryCardTile = ({
   onToggleFavorite,
   t,
 }) => (
-  <article className="group w-full max-w-[188px] rounded-[28px] glass-panel glass-panel-hover p-3 text-left shadow-lg shadow-black/10">
+  <motion.article
+    className="group w-full max-w-[188px] rounded-[28px] glass-panel glass-panel-hover p-3 text-left shadow-lg shadow-black/10"
+    initial={{ opacity: 0, scale: 0.93, y: 12 }}
+    animate={{ opacity: 1, scale: 1, y: 0 }}
+    transition={{ type: 'spring', stiffness: 95, damping: 14 }}
+  >
     <div className="mb-3 flex items-start justify-between gap-2 px-1">
       <div className="flex flex-wrap gap-2">
         <span className="rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[11px] tracking-wide text-gray-300">
@@ -71,7 +77,7 @@ const GalleryCardTile = ({
         <div className="line-clamp-1 text-xs text-gray-400">{localizedSuite}</div>
       </div>
     </button>
-  </article>
+  </motion.article>
 );
 
 export default GalleryCardTile;
