@@ -24,6 +24,7 @@ dist-ssr
 *.sw?
 .ace-tool/
 .worktrees/
+.superpowers/
 
 # Environment files
 .env
