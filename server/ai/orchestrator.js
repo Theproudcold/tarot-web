@@ -3,6 +3,7 @@ import { getPhaseLabel } from './agents/shared.js';
 import { createMockReading } from './providers/mockProvider.js';
 import { createOpenAIReading, testOpenAIConnection } from './providers/openaiProvider.js';
 import { getErrorDetail } from './errorUtils.js';
+import { createPhaseEvent } from '../api/contracts/readingEvents.js';
 
 const env = globalThis.process?.env ?? {};
 
@@ -16,13 +17,12 @@ const emitPhase = async (options, language, stage, status, extra = {}) => {
     return;
   }
 
-  await options.onPhase({
+  await options.onPhase(createPhaseEvent({
     stage,
     status,
     label: getPhaseLabel(stage, language),
-    timestamp: new Date().toISOString(),
     ...extra,
-  });
+  }));
 };
 
 export const resolveProvider = (aiConfig = null) => {

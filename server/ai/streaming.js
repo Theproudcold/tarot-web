@@ -1,3 +1,5 @@
+import { READING_EVENTS } from '../api/contracts/readingEvents.js';
+
 const STREAM_DELAY_MS = 90;
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -109,11 +111,11 @@ export const streamReadingFrames = async (response, reading, options = {}) => {
 
   for (const frame of frames) {
     if (abortedRef?.current) return;
-    writeSseEvent(response, 'partial', { reading: frame, stage });
+    writeSseEvent(response, READING_EVENTS.partial, { reading: frame, stage });
     await sleep(delayMs);
   }
 
   if (!abortedRef?.current) {
-    writeSseEvent(response, 'complete', { reading, stage });
+    writeSseEvent(response, READING_EVENTS.complete, { reading, stage });
   }
 };

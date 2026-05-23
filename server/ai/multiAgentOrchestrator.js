@@ -6,6 +6,7 @@ import { logMicrocopyDebug } from './debugMicrocopy.js';
 import { runReviewAgent } from './agents/reviewAgent.js';
 import { buildAgentContext, getPhaseLabel } from './agents/shared.js';
 import { getErrorDetail } from './errorUtils.js';
+import { createPhaseEvent } from '../api/contracts/readingEvents.js';
 
 const pipelineStages = ['draft', 'review', 'finalize'];
 const draftPipelineStages = ['draft'];
@@ -16,13 +17,12 @@ const emitPhase = async (onPhase, language, stage, status, extra = {}) => {
     return;
   }
 
-  await onPhase({
+  await onPhase(createPhaseEvent({
     stage,
     status,
     label: getPhaseLabel(stage, language),
-    timestamp: new Date().toISOString(),
     ...extra,
-  });
+  }));
 };
 
 const emitReadingSnapshot = async (onPartialReading, reading, stage) => {
