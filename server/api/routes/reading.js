@@ -1,9 +1,9 @@
 import {
   getActiveOrchestrationMode,
   getActiveProvider,
-  runReadingOrchestrator,
 } from '../../ai/orchestrator.js';
 import { streamReadingFrames } from '../../ai/streaming.js';
+import { runReadingWorkflow } from '../../ai/workflow/readingWorkflow.js';
 import { READING_EVENTS } from '../contracts/readingEvents.js';
 import { openFastifyEventStream, writeFastifySseEvent } from '../http/sse.js';
 import { validateReadingRequest } from '../http/body.js';
@@ -18,7 +18,7 @@ const formatPhaseLog = (phase = {}) => {
 const handleReadingJson = async (request, reply) => {
   try {
     const payload = validateReadingRequest(request.body);
-    return await runReadingOrchestrator(payload);
+    return await runReadingWorkflow(payload);
   } catch (error) {
     reply.code(400);
     return { error: error.message || 'Request failed' };
@@ -47,7 +47,7 @@ const handleReadingStream = async (request, reply) => {
       orchestration: runtimeProvider === 'mock' ? 'mock' : getActiveOrchestrationMode(payload.orchestration),
     });
 
-    const result = await runReadingOrchestrator(payload, {
+    const result = await runReadingWorkflow(payload, {
       onPhase: async (phase) => {
         console.info(formatPhaseLog(phase));
 
