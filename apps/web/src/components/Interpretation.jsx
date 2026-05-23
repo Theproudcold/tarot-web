@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { getOrchestrationLabel } from '../lib/orchestrationLabels.js';
 import { getReadingSourceLabel } from '../lib/readingSource.js';
 import { buildReading } from '../lib/tarotReading';
@@ -30,10 +30,10 @@ const labelsByLanguage = {
 };
 
 const barColors = {
-  Fire: 'bg-red-500',
-  Water: 'bg-blue-500',
-  Air: 'bg-yellow-400',
-  Earth: 'bg-green-500',
+  Fire: 'bg-gradient-to-t from-rose-500/90 to-amber-500/90 shadow-[0_0_12px_rgba(244,63,94,0.4)]',
+  Water: 'bg-gradient-to-t from-sky-500/90 to-indigo-500/90 shadow-[0_0_12px_rgba(14,165,233,0.4)]',
+  Air: 'bg-gradient-to-t from-amber-200/90 to-yellow-400/90 shadow-[0_0_12px_rgba(245,158,11,0.4)]',
+  Earth: 'bg-gradient-to-t from-emerald-500/90 to-teal-500/90 shadow-[0_0_12px_rgba(16,185,129,0.4)]',
 };
 const loadingDots = ['delay-0', 'delay-150', 'delay-300'];
 
@@ -139,6 +139,7 @@ const Interpretation = ({
   onRetry,
   t,
 }) => {
+  const [activeCardTab, setActiveCardTab] = useState(0);
   const labels = labelsByLanguage[language];
   const resolvedReading = useMemo(() => reading || buildReading(cards, { language }), [cards, language, reading]);
   const resolvedOrchestration = orchestration || reading?.orchestration || resolvedReading?.orchestration || null;
@@ -264,7 +265,7 @@ const Interpretation = ({
                 <span className="text-xs text-tarot-gold">{stat.percent}%</span>
                 <div className="relative h-full w-full overflow-hidden rounded-t bg-white/10">
                   <div
-                    className={`absolute bottom-0 w-full ${barColors[stat.key] || 'bg-white/30'} opacity-70 transition-all duration-700`}
+                    className={`absolute bottom-0 w-full ${barColors[stat.key] || 'bg-white/30'} opacity-90 transition-all duration-700`}
                     style={{ height: `${stat.percent}%` }}
                   />
                 </div>
@@ -292,25 +293,60 @@ const Interpretation = ({
       </div>
 
       <div className="mb-8 md:mb-12">
-        <h3 className="mb-8 text-center text-2xl tracking-[0.2em] text-tarot-gold">{labels.cardsTitle}</h3>
-        <div className="space-y-6">
-          {resolvedReading.perCard.map((item, index) => (
-            <div
-              key={item.slot}
-              className={`rounded-lg p-6 ${index === 1 ? 'border-l-4 border-tarot-gold bg-gradient-to-r from-tarot-gold/20 to-transparent' : 'border-t border-white/10 bg-gradient-to-r from-black/60 to-transparent'}`}
-            >
-              <h4 className="mb-2 text-lg text-tarot-gold">
-                {item.slotLabel} · {item.title} · {item.orientationLabel}
-              </h4>
-              <p className="border-l-2 border-white/20 pl-4 leading-relaxed text-gray-300">
-                “{item.keyword}”
-                <br />
-                <span className="mt-3 block text-sm opacity-80">
+        <h3 className="mb-6 text-center text-xl tracking-[0.25em] text-tarot-gold/90">{labels.cardsTitle}</h3>
+        
+        {/* Premium Tab Buttons */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-2 rounded-2xl border border-white/10 bg-black/40 p-1.5 backdrop-blur-md">
+          {resolvedReading.perCard.map((item, index) => {
+            const isActive = activeCardTab === index;
+            return (
+              <button
+                key={item.slot}
+                onClick={() => setActiveCardTab(index)}
+                className={`flex-1 rounded-xl px-4 py-3 text-center transition-all duration-300 ${
+                  isActive
+                    ? 'bg-tarot-gold/15 text-tarot-gold border border-tarot-gold/30 font-medium tab-glow'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/5 border border-transparent'
+                }`}
+              >
+                <div className="text-xs uppercase tracking-widest opacity-60 mb-0.5">{item.slotLabel}</div>
+                <div className="font-serif text-sm md:text-base flex items-center justify-center gap-1.5">
+                  <span>{item.title}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${item.orientationLabel === '正位' || item.orientationLabel?.includes('Upright') ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-300 border border-rose-500/20'}`}>
+                    {item.orientationLabel}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Interactive Card Content Container */}
+        <div className="relative overflow-hidden min-h-[180px]">
+          {resolvedReading.perCard.map((item, index) => {
+            if (activeCardTab !== index) return null;
+            return (
+              <div
+                key={item.slot}
+                className="animate-fadeIn glass-panel rounded-2xl p-6 md:p-8 relative"
+              >
+                <div className="absolute top-0 right-0 w-48 h-48 bg-tarot-gold/5 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div className="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-white/5 pb-4">
+                  <div className="font-serif text-xl md:text-2xl text-tarot-gold font-semibold">
+                    {item.slotLabel} · {item.title}
+                  </div>
+                  <div className="text-sm italic text-gray-400">
+                    “{item.keyword}”
+                  </div>
+                </div>
+
+                <p className="leading-loose text-gray-300 text-sm md:text-base font-serif pl-1">
                   {item.message || (isStreaming ? <StreamingPlaceholder text={placeholderLabel} /> : null)}
-                </span>
-              </p>
-            </div>
-          ))}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </div>
 

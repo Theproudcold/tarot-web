@@ -292,38 +292,7 @@ function App() {
   const progressLabel = `${Math.min(drawnCards.length, 3)}/3 ${t('cardsRemaining')}`;
 
   const readingSidebar = (
-    <aside className="order-1 space-y-4 xl:order-2 xl:sticky xl:top-24 xl:self-start">
-      <section className="rounded-3xl border border-white/10 bg-black/30 p-4 text-left backdrop-blur-sm md:p-5">
-        <div className="mb-4 flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-3">
-            <label htmlFor="reading-question" className="block text-lg font-serif text-tarot-gold md:text-xl">
-              {t('aiQuestionLabel')}
-            </label>
-            {isReadingComplete && (
-              <button
-                onClick={handleRefreshReading}
-                className="self-start rounded border border-tarot-gold px-4 py-2 text-tarot-gold transition-colors hover:bg-tarot-gold hover:text-tarot-bg md:self-auto"
-              >
-                {readingStatus === 'loading'
-                  ? t('aiRefreshing')
-                  : readingResult
-                    ? t('aiRegenerate')
-                    : t('aiGenerate')}
-              </button>
-            )}
-          </div>
-          <p className="text-xs text-gray-400 md:text-sm">{t('aiQuestionHint')}</p>
-        </div>
-        <textarea
-          id="reading-question"
-          value={readingQuestion}
-          onChange={(event) => setReadingQuestion(event.target.value)}
-          placeholder={t('aiQuestionPlaceholder')}
-          rows={4}
-          className="w-full resize-none rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-tarot-gold/40"
-        />
-      </section>
-
+    <aside className="order-2 space-y-4 xl:order-2 xl:sticky xl:top-24 xl:self-start">
       <AiSettingsPanel
         settings={aiSettings}
         onChange={setAiSettings}
@@ -336,19 +305,23 @@ function App() {
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-tarot-bg bg-[radial-gradient(circle_at_top,_rgba(212,175,55,0.16),_transparent_40%),linear-gradient(180deg,_rgba(10,10,18,0.98),_rgba(5,5,10,1))] text-center text-white overflow-x-hidden">
-      <RuntimeStatusBar
-        reading={readingResult}
-        orchestration={readingOrchestration}
-        selectedOrchestration={aiSettings.orchestrationMode || null}
-        settings={aiSettings}
-        language={language}
-        t={t}
-      />
+      <div className="relative min-h-screen bg-tarot-bg bg-[radial-gradient(circle_at_top,_rgba(212,175,55,0.16),_transparent_40%),linear-gradient(180deg,_rgba(10,10,18,0.98),_rgba(5,5,10,1))] text-center text-white overflow-x-hidden">
+        {/* Deep space cosmic stellar nebulas */}
+        <div className="nebula-glow-1" />
+        <div className="nebula-glow-2" />
 
-      <header className="border-b border-tarot-gold/20 bg-black/20 p-4 backdrop-blur-sm md:p-8">
-        <div className="flex flex-col gap-4 md:gap-6">
-          <div className="flex items-start justify-between gap-4">
+        <RuntimeStatusBar
+          reading={readingResult}
+          orchestration={readingOrchestration}
+          selectedOrchestration={aiSettings.orchestrationMode || null}
+          settings={aiSettings}
+          language={language}
+          t={t}
+        />
+
+        <header className="sticky top-0 z-50 border-b border-tarot-gold/15 bg-black/45 p-4 backdrop-blur-md transition-all duration-300 md:px-8 md:py-4">
+          <div className="mx-auto max-w-7xl flex flex-col gap-4 md:gap-5">
+            <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="m-0 font-serif text-3xl text-tarot-gold drop-shadow-[0_0_10px_rgba(212,175,55,0.5)] md:text-5xl">
                 {t('title')}
@@ -410,10 +383,43 @@ function App() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-7xl flex-1 px-3 py-3 md:px-4 md:py-5">
+      <main className="relative z-10 mx-auto w-full max-w-7xl flex-1 px-3 py-3 md:px-4 md:py-5">
         {viewMode === 'reading' && (
           <div className="grid w-full items-start gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:gap-6">
-            <div className="order-2 min-w-0 space-y-4 md:space-y-6 xl:order-1">
+            <div className="order-1 min-w-0 space-y-4 md:space-y-6 xl:order-1">
+              {/* Question Focus Glass Panel */}
+              <section className="glass-panel rounded-3xl p-4 text-left md:p-5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-tarot-gold/5 rounded-full blur-2xl pointer-events-none"></div>
+                <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <label htmlFor="reading-question" className="block text-lg font-serif text-tarot-gold md:text-xl">
+                      {t('aiQuestionLabel')}
+                    </label>
+                    <p className="text-xs text-gray-400 md:text-sm mt-1">{t('aiQuestionHint')}</p>
+                  </div>
+                  {isReadingComplete && (
+                    <button
+                      onClick={handleRefreshReading}
+                      className="self-start rounded-full border border-tarot-gold px-4 py-2 text-sm text-tarot-gold transition-all duration-300 hover:bg-tarot-gold hover:text-tarot-bg hover:shadow-[0_0_15px_rgba(212,175,55,0.4)] md:self-auto"
+                    >
+                      {readingStatus === 'loading'
+                        ? t('aiRefreshing')
+                        : readingResult
+                          ? t('aiRegenerate')
+                          : t('aiGenerate')}
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  id="reading-question"
+                  value={readingQuestion}
+                  onChange={(event) => setReadingQuestion(event.target.value)}
+                  placeholder={t('aiQuestionPlaceholder')}
+                  rows={2}
+                  className="w-full resize-none rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-tarot-gold/30 transition-all"
+                />
+              </section>
+
               <section className="overflow-visible rounded-3xl border border-tarot-gold/20 bg-black/30 p-4 text-left backdrop-blur-sm md:p-6">
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
