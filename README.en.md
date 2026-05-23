@@ -25,7 +25,10 @@ Mystic Tarot is designed to make the full reading pipeline transparent and verif
 ## Highlights
 
 - **Full 78-card tarot dataset** in Chinese and English, with search, grouping, sorting, favorites, and side-by-side comparison.
-- **Three-card timeline spread**: Past / Present / Future.
+- **Three-card timeline spread**: Past / Present / Future, featuring spring-based card fly-in and micro-rebound animation via Framer Motion.
+- **Mystical Aesthetics & Glassmorphism**: Elegant cosmic background with rotating nebulae (Stellar Glow) and fine dark gold borders with glow shadows on all panels.
+- **Tabbed Card Deck Reading**: Restructured vertical long scrolls into an interactive "Past / Present / Future" tabbed view with upright/reversed badges.
+- **Divination Loading Ceremony**: Double celestial orbits spinning concurrently with custom pulsing element bar skeletons to minimize loading anxiety.
 - **Structured output**: `summary / quote / perCard / advice / followUps / mantra / safetyNote`.
 - **In-browser AI settings**: `Base URL / API Key / Model / Provider Label / Orchestration`, stored only in `localStorage`.
 - **Three-stage pipeline**: Card Draft → Reading Review → Final Reading, with native provider streaming in the final stage.
