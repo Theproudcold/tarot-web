@@ -1,6 +1,6 @@
 import React from 'react';
 import Card from './Card';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 
 const headings = {
   en: ['Past', 'Present', 'Future'],
@@ -22,7 +22,7 @@ const Spread = ({ cards, language = 'en' }) => {
   return (
     <div className={`flex w-full items-center justify-center gap-4 transition-all duration-300 md:gap-8 ${hasCards ? 'min-h-[220px] md:min-h-[400px] flex-col md:flex-row' : 'min-h-[160px] md:min-h-[240px] flex-row'}`}>
       {cards.map((card, index) => (
-        <motion.div
+        <Motion.div
           key={`${card.id}-${index}`}
           className="flex flex-col items-center"
           initial={{ opacity: 0, scale: 0.3, y: -160, rotate: -20 }}
@@ -41,7 +41,7 @@ const Spread = ({ cards, language = 'en' }) => {
             isFlipped={true}
             language={language}
           />
-        </motion.div>
+        </Motion.div>
       ))}
       {[...Array(3 - cards.length)].map((_, index) => {
         const headingIndex = cards.length + index;
